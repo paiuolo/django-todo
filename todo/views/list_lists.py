@@ -11,7 +11,7 @@ from todo.utils import staff_check
 
 
 @login_required
-@user_passes_test(staff_check)
+# @user_passes_test(staff_check)  # pai
 def list_lists(request) -> HttpResponse:
     """Homepage view - list of lists a user can view, and ability to add a list.
     """

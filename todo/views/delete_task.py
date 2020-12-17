@@ -10,7 +10,7 @@ from todo.utils import staff_check
 
 
 @login_required
-@user_passes_test(staff_check)
+#@user_passes_test(staff_check)  # pai
 def delete_task(request, task_id: int) -> HttpResponse:
     """Delete specified task.
     Redirect to the list from which the task came.
@@ -18,6 +18,11 @@ def delete_task(request, task_id: int) -> HttpResponse:
 
     if request.method == "POST":
         task = get_object_or_404(Task, pk=task_id)
+
+        # pai
+        if not staff_check(request.user):
+            if task.created_by != request.user:
+                raise PermissionDenied
 
         redir_url = reverse(
             "todo:list_detail",
