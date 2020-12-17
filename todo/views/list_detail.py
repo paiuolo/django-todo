@@ -5,6 +5,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.db.models import Q  # pai
 
 from todo.forms import AddEditTaskForm
 from todo.models import Task, TaskList
@@ -12,7 +13,7 @@ from todo.utils import send_notify_mail, staff_check
 
 
 @login_required
-@user_passes_test(staff_check)
+# @user_passes_test(staff_check)  # pai, permit owner listing
 def list_detail(request, list_id=None, list_slug=None, view_completed=False) -> HttpResponse:
     """Display and manage tasks in a todo list.
     """
@@ -24,13 +25,16 @@ def list_detail(request, list_id=None, list_slug=None, view_completed=False) -> 
     # Which tasks to show on this list view?
     if list_slug == "mine":
         tasks = Task.objects.filter(assigned_to=request.user)
-
     else:
         # Show a specific list, ensuring permissions.
         task_list = get_object_or_404(TaskList, id=list_id)
         if task_list.group not in request.user.groups.all() and not request.user.is_superuser:
-            raise PermissionDenied
-        tasks = Task.objects.filter(task_list=task_list.id)
+            # pai
+            # raise PermissionDenied
+            tasks = Task.objects.filter(Q(created_by=request.user) | Q(assigned_to=request.user))
+
+        else:
+            tasks = Task.objects.filter(task_list=task_list.id)
 
     # Additional filtering
     if view_completed:

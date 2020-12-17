@@ -28,7 +28,8 @@ def staff_check(user):
 
 
 def user_can_read_task(task, user):
-    return task.task_list.group in user.groups.all() or user.is_superuser
+    # return task.task_list.group in user.groups.all() or user.is_superuser
+    return task.task_list.group in user.groups.all() or user.is_superuser or (task.created_by == user)  # pai
 
 
 def todo_get_backend(task):

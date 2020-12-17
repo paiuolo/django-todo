@@ -26,6 +26,10 @@ INSTALLED_APPS = (
     "todo",
     "dal",
     "dal_select2",
+    # pai
+    # django-filer
+    "easy_thumbnails",
+    "filer",
 )
 
 ROOT_URLCONF = "base_urls"
@@ -69,3 +73,8 @@ LOGGING = {
         "django.request": {"handlers": ["console"], "level": "DEBUG", "propagate": True},
     },
 }
+
+# pai
+# django-filer
+FILER_ENABLE_PERMISSIONS = True
+FILER_IS_PUBLIC_DEFAULT = False

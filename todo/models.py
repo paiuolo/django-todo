@@ -11,12 +11,34 @@ from django.db.transaction import Atomic, get_connection
 from django.urls import reverse
 from django.utils import timezone
 
+from filer.fields.file import FilerFileField  # pai
+from .storage import custom_fs  # pai
+
 
 def get_attachment_upload_dir(instance, filename):
     """Determine upload dir for task attachment files.
     """
+    # pai
+    # return "/".join(["tasks", "attachments", str(instance.task.id), filename])
 
-    return "/".join(["tasks", "attachments", str(instance.task.id), filename])
+    instance_class_name = instance.__class__.__name__
+    if instance_class_name == 'Attachment':
+        instance_user = instance.added_by
+    else:
+        instance_user = instance.user
+
+    if 'django_sso_app' in settings.INSTALLED_APPS:
+        # file will be uploaded to PRIVATE_ROOT/users/<user__sso_id>/<upload__upload_type/<filename>
+        user_id = instance_user.sso_id
+    else:
+        user_id = instance_user.username
+
+    return os.path.sep.join(['users',
+                             user_id,
+                             'tasks',
+                             str(instance.task.task_list.slug),
+                             str(instance.task.id),
+                             filename])
 
 
 class LockedAtomicTransaction(Atomic):
@@ -172,7 +194,15 @@ class Attachment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     added_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(default=datetime.datetime.now)
-    file = models.FileField(upload_to=get_attachment_upload_dir, max_length=255)
+    # pai
+    # file = models.FileField(upload_to=get_attachment_upload_dir, max_length=255)
+    file = models.FileField(storage=custom_fs,
+                            upload_to=get_attachment_upload_dir,
+                            max_length=255)
+
+    filer_file = FilerFileField(null=True,
+                                blank=True,
+                                on_delete=models.SET_NULL)
 
     def filename(self):
         return os.path.basename(self.file.name)

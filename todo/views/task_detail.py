@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404  # pai
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
@@ -21,6 +21,8 @@ from todo.utils import (
     toggle_task_completed,
     user_can_read_task,
 )
+
+from filer.models import File as FilerFile, Folder as FilerFolder  # pai
 
 if HAS_TASK_MERGE:
     from dal import autocomplete
@@ -45,18 +47,20 @@ def handle_add_comment(request, task):
 
 
 @login_required
-@user_passes_test(staff_check)
+# @user_passes_test(staff_check)  # pai, permit owner updates
 def task_detail(request, task_id: int) -> HttpResponse:
     """View task details. Allow task details to be edited. Process new comments on task.
     """
 
     task = get_object_or_404(Task, pk=task_id)
-    comment_list = Comment.objects.filter(task=task_id).order_by("-date")
+    # comment_list = Comment.objects.filter(task=task_id).order_by("-date")  # pai
 
     # Ensure user has permission to view task. Superusers can view all tasks.
     # Get the group this task belongs to, and check whether current user is a member of that group.
     if not user_can_read_task(task, request.user):
         raise PermissionDenied
+
+    comment_list = Comment.objects.filter(task=task_id).order_by("-date")  # pai
 
     # Handle task merging
     if not HAS_TASK_MERGE:
@@ -132,9 +136,49 @@ def task_detail(request, task_id: int) -> HttpResponse:
             messages.error(request, f"This site does not allow upload of {extension} files.")
             return redirect("todo:task_detail", task_id=task.id)
 
-        Attachment.objects.create(
-            task=task, added_by=request.user, timestamp=datetime.datetime.now(), file=file
+        # pai
+        #Attachment.objects.create(
+        #    task=task, added_by=request.user, timestamp=datetime.datetime.now(), file=file
+        #)
+        user = task.created_by  #!!
+
+        if 'django_sso_app' in settings.INSTALLED_APPS:
+            user_id = user.sso_id
+        else:
+            user_id = user.username
+
+        created_attachment = Attachment.objects.create(
+            task=task, added_by=user, timestamp=datetime.datetime.now(), file=file
         )
+
+        created_attachment_task = created_attachment.task
+        created_attachment_task_list = created_attachment_task.task_list
+
+        # creating filer folders
+        users_folder, _created = FilerFolder.objects.get_or_create(name='users')
+        user_folder, _created = FilerFolder.objects.get_or_create(name=user_id,
+                                                                  parent=users_folder,
+                                                                  owner=user)
+        user_tasks_folder, _created = FilerFolder.objects.get_or_create(name='tasks',
+                                                                        parent=user_folder)
+        user_tasklist_folder, _created = FilerFolder.objects.get_or_create(name=created_attachment_task_list.slug,
+                                                                           parent=user_tasks_folder)
+        user_tasklist_task_folder, _created = FilerFolder.objects.get_or_create(name=str(created_attachment_task.id),
+                                                                                parent=user_tasklist_folder)
+
+        # creating filer file
+        filer_file = FilerFile()
+        filer_file.file = created_attachment.file
+        filer_file.owner = user
+        filer_file.original_filename = os.path.basename(created_attachment.file.name)
+        filer_file.folder = user_tasklist_task_folder
+
+        filer_file.save()
+
+        # update attachment
+        created_attachment.filer_file = filer_file
+        created_attachment.save()
+
         messages.success(request, f"File attached successfully")
         return redirect("todo:task_detail", task_id=task.id)
 

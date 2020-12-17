@@ -54,3 +54,10 @@ admin.site.register(TaskList)
 admin.site.register(Comment, CommentAdmin)
 admin.site.register(Task, TaskAdmin)
 admin.site.register(Attachment, AttachmentAdmin)
+
+# pai
+# disable filer unwanted features
+from filer.models import ThumbnailOption, FolderPermission
+
+admin.site.unregister(ThumbnailOption)
+admin.site.unregister(FolderPermission)
