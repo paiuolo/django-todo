@@ -3,6 +3,7 @@ import datetime
 
 from django.contrib import admin
 from django.http import HttpResponse
+from django.conf import settings
 
 from todo.models import Attachment, Comment, Task, TaskList
 
@@ -55,9 +56,15 @@ admin.site.register(Comment, CommentAdmin)
 admin.site.register(Task, TaskAdmin)
 admin.site.register(Attachment, AttachmentAdmin)
 
-# pai
-# disable filer unwanted features
-from filer.models import ThumbnailOption, FolderPermission
 
-admin.site.unregister(ThumbnailOption)
-admin.site.unregister(FolderPermission)
+# pai
+from django.contrib.admin.sites import NotRegistered
+
+try:
+    # disable filer unwanted features
+    from filer.models import ThumbnailOption, FolderPermission
+
+    admin.site.unregister(ThumbnailOption)
+    admin.site.unregister(FolderPermission)
+except NotRegistered:
+    pass

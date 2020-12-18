@@ -31,7 +31,7 @@ def list_detail(request, list_id=None, list_slug=None, view_completed=False) -> 
         if task_list.group not in request.user.groups.all() and not request.user.is_superuser:
             # pai
             # raise PermissionDenied
-            tasks = Task.objects.filter(Q(created_by=request.user) | Q(assigned_to=request.user))
+            tasks = Task.objects.filter(Q(created_by=request.user) | Q(assigned_to=request.user)).filter(task_list=task_list)
 
         else:
             tasks = Task.objects.filter(task_list=task_list.id)

@@ -288,7 +288,10 @@ def test_view_list_not_mine(todo_setup, client):
     url = reverse("todo:list_detail", kwargs={"list_id": tlist.id, "list_slug": tlist.slug})
     client.login(username="u2", password="password")
     response = client.get(url)
-    assert response.status_code == 403
+    # pai
+    # assert response.status_code == 400
+    assert response.status_code == 200
+    assert len(response.context['tasks']) == 0
 
 
 def test_view_task_mine(todo_setup, client):
@@ -349,4 +352,6 @@ def test_setting_TODO_STAFF_ONLY_True(todo_setup, client, settings, django_user_
 
     client.login(username="u2", password="password")
     response = client.get(url)
-    assert response.status_code == 302  # Redirected to login view
+    # pai
+    # assert response.status_code == 302  # Redirected to login view
+    assert response.status_code == 200  # task list is always visible
