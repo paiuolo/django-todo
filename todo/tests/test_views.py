@@ -291,7 +291,7 @@ def test_view_list_not_mine(todo_setup, client):
     # pai
     # assert response.status_code == 400
     assert response.status_code == 200
-    assert len(response.context['tasks']) == 0
+    assert len(response.context['tasks']) == 2
 
 
 def test_view_task_mine(todo_setup, client):

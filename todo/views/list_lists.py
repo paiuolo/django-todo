@@ -37,11 +37,20 @@ def list_lists(request) -> HttpResponse:
     if request.user.is_superuser:
         task_count = Task.objects.filter(completed=0).count()
     else:
-        task_count = (
-            Task.objects.filter(completed=0)
-            .filter(task_list__group__in=request.user.groups.all())
-            .count()
-        )
+        if not staff_check(request.user):
+            task_count = (
+                Task.objects.filter(completed=0)
+                    .filter(task_list__group__in=request.user.groups.all()).filter(
+                                created_by=request.user, assigned_to=request.user)  # pai
+                    .count()
+            )
+            print(task_count)
+        else:
+            task_count = (
+                Task.objects.filter(completed=0)
+                .filter(task_list__group__in=request.user.groups.all())
+                .count()
+            )
 
     context = {
         "lists": lists,

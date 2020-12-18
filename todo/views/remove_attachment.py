@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 
 from todo.models import Attachment
-from todo.utils import remove_attachment_file
+from todo.utils import remove_attachment_file, staff_check
 
 
 @login_required
@@ -18,7 +18,10 @@ def remove_attachment(request, attachment_id: int) -> HttpResponse:
     if request.method == "POST":
         attachment = get_object_or_404(Attachment, pk=attachment_id)
 
-        redir_url = reverse("todo:task_detail", kwargs={"task_id": attachment.task.id})
+        # pai
+        if not staff_check(request.user):
+            if not attachment.task.created_by == request.user:  # owner only
+                raise PermissionDenied
 
         # Permissions
         if not (
@@ -33,6 +36,8 @@ def remove_attachment(request, attachment_id: int) -> HttpResponse:
             messages.error(
                 request, f"Sorry, there was a problem deleting attachment {attachment.id}."
             )
+
+        redir_url = reverse("todo:task_detail", kwargs={"task_id": attachment.task.id})
 
         return redirect(redir_url)
 
