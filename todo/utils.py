@@ -7,9 +7,12 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core import mail
 from django.template.loader import render_to_string
+from django.utils import timezone  # pai
 
 from todo.defaults import defaults
 from todo.models import Attachment, Comment, Task
+
+from filer.models import File as FilerFile, Folder as FilerFolder  # pai
 
 log = logging.getLogger(__name__)
 
@@ -176,3 +179,54 @@ def remove_attachment_file(attachment_id: int) -> bool:
     except Attachment.DoesNotExist:
         log.info(f"Attachment {attachment_id} not found.")
         return False
+
+
+# pai
+
+def add_attachment_file(request, file_data, task):
+    if file_data.size > defaults("TODO_MAXIMUM_ATTACHMENT_SIZE"):
+        raise Exception("File exceeds maximum attachment size.")
+
+    name, extension = os.path.splitext(file_data.name)
+
+    if extension not in defaults("TODO_LIMIT_FILE_ATTACHMENTS"):
+        raise Exception("This site does not allow upload of '{}' files.".format(extension))
+
+    user = request.user  # !!
+
+    if 'django_sso_app' in settings.INSTALLED_APPS:
+        user_id = user.sso_id
+    else:
+        user_id = user.username
+
+    created_attachment = Attachment.objects.create(
+        task=task, added_by=user, timestamp=timezone.now(), file=file_data
+    )
+
+    created_attachment_task = created_attachment.task
+    created_attachment_task_list = created_attachment_task.task_list
+
+    # creating filer folders
+    users_folder, _created = FilerFolder.objects.get_or_create(name='users')
+    user_folder, _created = FilerFolder.objects.get_or_create(name=user_id,
+                                                              parent=users_folder,
+                                                              owner=user)
+    user_tasks_folder, _created = FilerFolder.objects.get_or_create(name='tasks',
+                                                                    parent=user_folder)
+    user_tasklist_folder, _created = FilerFolder.objects.get_or_create(name=created_attachment_task_list.slug,
+                                                                       parent=user_tasks_folder)
+    user_tasklist_task_folder, _created = FilerFolder.objects.get_or_create(name=str(created_attachment_task.id),
+                                                                            parent=user_tasklist_folder)
+
+    # creating filer file
+    filer_file = FilerFile()
+    filer_file.file = created_attachment.file
+    filer_file.owner = user
+    filer_file.original_filename = os.path.basename(created_attachment.file.name)
+    filer_file.folder = user_tasklist_task_folder
+
+    filer_file.save()
+
+    # update attachment
+    created_attachment.filer_file = filer_file
+    created_attachment.save()

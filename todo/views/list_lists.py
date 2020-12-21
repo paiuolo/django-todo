@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import HttpResponse
 from django.shortcuts import render
+from django.db.models import Q  # pai
+from django.utils import timezone  # pai
 
 from todo.forms import SearchForm
 from todo.models import Task, TaskList
@@ -16,7 +18,7 @@ def list_lists(request) -> HttpResponse:
     """Homepage view - list of lists a user can view, and ability to add a list.
     """
 
-    thedate = datetime.datetime.now()
+    thedate = timezone.now()
     searchform = SearchForm(auto_id=False)
 
     # Make sure user belongs to at least one group.
@@ -41,7 +43,7 @@ def list_lists(request) -> HttpResponse:
             task_count = (
                 Task.objects.filter(completed=0)
                     .filter(task_list__group__in=request.user.groups.all()).filter(
-                                created_by=request.user, assigned_to=request.user)  # pai
+                                Q(created_by=request.user) | Q(assigned_to=request.user))  # pai
                     .count()
             )
             print(task_count)

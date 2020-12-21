@@ -1,28 +1,25 @@
-import datetime
-import os
-
 import bleach
 from django import forms
-from django.conf import settings
+from django.utils import timezone
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required  # , user_passes_test
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, Http404  # pai
+from django.http import HttpResponse  # , Http404  # pai
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from todo.defaults import defaults
 from todo.features import HAS_TASK_MERGE
 from todo.forms import AddEditTaskForm
-from todo.models import Attachment, Comment, Task
+from todo.models import Comment, Task
 from todo.utils import (
     send_email_to_thread_participants,
-    staff_check,
+    # staff_check,
     toggle_task_completed,
     user_can_read_task,
 )
 
-from filer.models import File as FilerFile, Folder as FilerFolder  # pai
+from todo.utils import add_attachment_file  # pai
 
 if HAS_TASK_MERGE:
     from dal import autocomplete
@@ -120,64 +117,22 @@ def task_detail(request, task_id: int) -> HttpResponse:
     if task.due_date:
         thedate = task.due_date
     else:
-        thedate = datetime.datetime.now()
+        thedate = timezone.now()
 
     # Handle uploaded files
-    if request.FILES.get("attachment_file_input"):
-        file = request.FILES.get("attachment_file_input")
+    # pai
+    # Attachment.objects.create(
+    #    task=task, added_by=request.user, timestamp=datetime.datetime.now(), file=file
+    # )
 
-        if file.size > defaults("TODO_MAXIMUM_ATTACHMENT_SIZE"):
-            messages.error(request, f"File exceeds maximum attachment size.")
+    attachment_file = request.FILES.get("attachment_file_input", None)
+    if attachment_file is not None:
+        try:
+            add_attachment_file(request, attachment_file, task)  # pai
+
+        except Exception as e:
+            messages.error(request, str(e))
             return redirect("todo:task_detail", task_id=task.id)
-
-        name, extension = os.path.splitext(file.name)
-
-        if extension not in defaults("TODO_LIMIT_FILE_ATTACHMENTS"):
-            messages.error(request, f"This site does not allow upload of {extension} files.")
-            return redirect("todo:task_detail", task_id=task.id)
-
-        # pai
-        #Attachment.objects.create(
-        #    task=task, added_by=request.user, timestamp=datetime.datetime.now(), file=file
-        #)
-        user = task.created_by  #!!
-
-        if 'django_sso_app' in settings.INSTALLED_APPS:
-            user_id = user.sso_id
-        else:
-            user_id = user.username
-
-        created_attachment = Attachment.objects.create(
-            task=task, added_by=user, timestamp=datetime.datetime.now(), file=file
-        )
-
-        created_attachment_task = created_attachment.task
-        created_attachment_task_list = created_attachment_task.task_list
-
-        # creating filer folders
-        users_folder, _created = FilerFolder.objects.get_or_create(name='users')
-        user_folder, _created = FilerFolder.objects.get_or_create(name=user_id,
-                                                                  parent=users_folder,
-                                                                  owner=user)
-        user_tasks_folder, _created = FilerFolder.objects.get_or_create(name='tasks',
-                                                                        parent=user_folder)
-        user_tasklist_folder, _created = FilerFolder.objects.get_or_create(name=created_attachment_task_list.slug,
-                                                                           parent=user_tasks_folder)
-        user_tasklist_task_folder, _created = FilerFolder.objects.get_or_create(name=str(created_attachment_task.id),
-                                                                                parent=user_tasklist_folder)
-
-        # creating filer file
-        filer_file = FilerFile()
-        filer_file.file = created_attachment.file
-        filer_file.owner = user
-        filer_file.original_filename = os.path.basename(created_attachment.file.name)
-        filer_file.folder = user_tasklist_task_folder
-
-        filer_file.save()
-
-        # update attachment
-        created_attachment.filer_file = filer_file
-        created_attachment.save()
 
         messages.success(request, f"File attached successfully")
         return redirect("todo:task_detail", task_id=task.id)

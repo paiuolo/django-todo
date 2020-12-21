@@ -73,4 +73,4 @@ def test_inserted_row(import_setup):
     assert not task.completed
     assert task.note == "This is note one"
     assert task.priority == 3
-    assert task.created_date == datetime.datetime.today().date()
+    assert task.created_date.date() == datetime.datetime.today().date()  # pai

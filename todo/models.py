@@ -89,14 +89,18 @@ class TaskList(models.Model):
         # Prevents (at the database level) creation of two lists with the same slug in the same group
         unique_together = ("group", "slug")
 
+    # pai
+    def get_absolute_rest_url(self):
+        return reverse("todo_api:list_detail", args=[self.pk])
+
 
 class Task(models.Model):
     title = models.CharField(max_length=140)
     task_list = models.ForeignKey(TaskList, on_delete=models.CASCADE, null=True)
-    created_date = models.DateField(default=timezone.now, blank=True, null=True)
-    due_date = models.DateField(blank=True, null=True)
+    created_date = models.DateTimeField(default=timezone.now, blank=True, null=True)  # pai
+    due_date = models.DateTimeField(blank=True, null=True)  # pai
     completed = models.BooleanField(default=False)
-    completed_date = models.DateField(blank=True, null=True)
+    completed_date = models.DateTimeField(blank=True, null=True)  # pai
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -126,11 +130,15 @@ class Task(models.Model):
     def get_absolute_url(self):
         return reverse("todo:task_detail", kwargs={"task_id": self.id})
 
+    # pai
+    def get_absolute_rest_url(self):
+        return reverse("todo_api:task_detail", args=[self.pk])
+
     # Auto-set the Task creation / completed date
     def save(self, **kwargs):
         # If Task is being marked complete, set the completed_date
         if self.completed:
-            self.completed_date = datetime.datetime.now()
+            self.completed_date = timezone.now()
         super(Task, self).save()
 
     def merge_into(self, merge_target):
@@ -158,7 +166,7 @@ class Comment(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True
     )
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
-    date = models.DateTimeField(default=datetime.datetime.now)
+    date = models.DateTimeField(default=timezone.now)
     email_from = models.CharField(max_length=320, blank=True, null=True)
     email_message_id = models.CharField(max_length=255, blank=True, null=True)
 
@@ -193,7 +201,7 @@ class Attachment(models.Model):
 
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     added_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    timestamp = models.DateTimeField(default=datetime.datetime.now)
+    timestamp = models.DateTimeField(default=timezone.now)
     # pai
     # file = models.FileField(upload_to=get_attachment_upload_dir, max_length=255)
     file = models.FileField(storage=custom_fs,
