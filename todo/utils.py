@@ -24,7 +24,12 @@ def staff_check(user):
     """
 
     if defaults("TODO_STAFF_ONLY"):
-        return user.is_staff
+        if 'django_sso_app' in settings.INSTALLED_APPS:
+            from django_sso_app.core.permissions import is_staff
+
+            return is_staff(user)
+        else:
+            return user.is_staff
     else:
         # If unset or False, allow all logged in users
         return True
