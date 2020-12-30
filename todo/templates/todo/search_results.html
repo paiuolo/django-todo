@@ -4,6 +4,17 @@
 {% block content_title %}<h2 class="page_title">Search</h2>{% endblock %}
 
 {% block content %}
+
+    <form action="{% url 'todo:search' %}" name="search" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="id_q">Query</label>
+          <input type="text" class="form-control" id="id_q" name="q" required placeholder="Search"
+              value="{{ form.q.value }}">
+          <input type="submit" class="btn btn-primary" name="perform_search" value="Submit">
+        </div>
+    </form>
+
   {% if found_tasks %}
   <h2>{{found_tasks.count}} search results for term: "{{ query_string }}"</h2>
   <div class="post_list">
@@ -25,6 +36,8 @@
     {% endfor %}
   </div>
   {% else %}
-    <h2> No results to show, sorry.</h2>
+    {% if query_string != '' %}
+      <h2> No results to show, sorry.</h2>
+    {% endif %}
   {% endif %}
 {% endblock %}
