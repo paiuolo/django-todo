@@ -89,9 +89,7 @@ def task_detail(request, task_id: int) -> HttpResponse:
     handle_add_comment(request, task)
 
     # Save task edits
-    if not request.POST.get("add_edit_task"):
-        form = AddEditTaskForm(request.user, instance=task, initial={"task_list": task.task_list})
-    else:
+    if request.POST.getlist("add_edit_task"):  # pai
         form = AddEditTaskForm(
             request.user, request.POST, instance=task, initial={"task_list": task.task_list}
         )
@@ -105,6 +103,8 @@ def task_detail(request, task_id: int) -> HttpResponse:
             return redirect(
                 "todo:list_detail", list_id=task.task_list.id, list_slug=task.task_list.slug
             )
+    else:
+        form = AddEditTaskForm(request.user, instance=task, initial={"task_list": task.task_list})
 
     # Mark complete
     if request.POST.get("toggle_done"):
