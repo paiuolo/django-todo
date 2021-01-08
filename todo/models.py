@@ -93,6 +93,18 @@ class TaskList(models.Model):
     def get_absolute_rest_url(self):
         return reverse("todo_api:list_detail", args=[self.pk])
 
+    @property
+    def completed_tasks(self):
+        return self.task_set.filter(completed=True)
+
+    @property
+    def completed_tasks_percentage(self):
+        task_count = self.task_set.count()
+        if task_count == 0:
+            return 0
+        else:
+            return int((self.task_set.filter(completed=True).count() * 100) / self.task_set.count())
+
 
 class Task(models.Model):
     title = models.CharField(max_length=140)

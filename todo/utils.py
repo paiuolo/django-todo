@@ -8,6 +8,7 @@ from django.contrib.sites.models import Site
 from django.core import mail
 from django.template.loader import render_to_string
 from django.utils import timezone  # pai
+from django.db.models import Q  # pai
 
 from todo.defaults import defaults
 from todo.models import Attachment, Comment, Task
@@ -235,3 +236,10 @@ def add_attachment_file(request, file_data, task):
     # update attachment
     created_attachment.filer_file = filer_file
     created_attachment.save()
+
+
+def get_user_tasks(task_list, user, completed=None):
+    if completed is None:
+        return task_list.task_set.filter(Q(created_by=user) | Q(assigned_to=user))
+    else:
+        return task_list.task_set.filter(completed=completed).filter(Q(created_by=user) | Q(assigned_to=user))

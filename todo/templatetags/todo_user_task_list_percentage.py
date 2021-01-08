@@ -1,0 +1,16 @@
+from django import template
+
+from ..utils import get_user_tasks
+
+register = template.Library()
+
+
+@register.simple_tag
+def todo_user_task_list_percentage(task_list, user):
+    user_tasks = get_user_tasks(task_list, user).count()
+
+    if user_tasks == 0:
+        return 0
+    else:
+        completed_user_tasks = get_user_tasks(task_list, user, True).count()
+        return int((completed_user_tasks * 100) / user_tasks)
