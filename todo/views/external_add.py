@@ -7,7 +7,7 @@ from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
-
+from django.utils.translation import gettext as _  # pai
 from todo.defaults import defaults
 from todo.forms import AddExternalTaskForm
 from todo.models import TaskList
@@ -65,11 +65,11 @@ def external_add(request) -> HttpResponse:
                     )
                 except ConnectionRefusedError:
                     messages.warning(
-                        request, "Task saved but mail not sent. Contact your administrator."
+                        request, _("Task saved but mail not sent. Contact your administrator.")
                     )
 
             messages.success(
-                request, "Your trouble ticket has been submitted. We'll get back to you soon."
+                request, _("Your trouble ticket has been submitted. We'll get back to you soon.")
             )
             return redirect(defaults("TODO_PUBLIC_SUBMIT_REDIRECT"))
 

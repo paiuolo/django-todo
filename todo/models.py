@@ -12,6 +12,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from filer.fields.file import FilerFileField  # pai
+
 from .storage import custom_fs  # pai
 
 
@@ -133,7 +134,8 @@ class Task(models.Model):
     # Has due date for an instance of this object passed?
     def overdue_status(self):
         "Returns whether the Tasks's due date has passed or not."
-        if self.due_date and datetime.date.today() > self.due_date:
+        #if self.due_date and datetime.date.today() > self.due_date:  # pai
+        if self.due_date and timezone.now() > self.due_date:  # pai
             return True
 
     def __str__(self):

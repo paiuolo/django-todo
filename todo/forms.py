@@ -1,6 +1,9 @@
 from django import forms
 from django.contrib.auth.models import Group
 from django.forms import ModelForm
+from django.conf import settings  # pai
+from django.contrib.auth import get_user_model  # pai
+
 from todo.models import Task, TaskList
 
 
@@ -30,6 +33,7 @@ class AddEditTaskForm(ModelForm):
     def __init__(self, user, *args, **kwargs):
         super().__init__(*args, **kwargs)
         task_list = kwargs.get("initial").get("task_list")
+        assigned_to = kwargs.get("initial").get("assigned_to")  # pai
         members = task_list.group.user_set.all()
         self.fields["assigned_to"].queryset = members
         self.fields["assigned_to"].label_from_instance = lambda obj: "%s (%s)" % (
@@ -41,9 +45,10 @@ class AddEditTaskForm(ModelForm):
             "class": "custom-select mb-3",
             "name": "assigned_to",
         }
-        self.fields["task_list"].value = kwargs["initial"]["task_list"].id
+        self.fields["assigned_to"].value = assigned_to # pai
+        self.fields["task_list"].value = task_list.id
 
-    due_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}), required=False)
+    due_date = forms.DateTimeField(widget=forms.DateInput(attrs={"type": "date"}), required=False)
 
     title = forms.CharField(widget=forms.widgets.TextInput())
 
