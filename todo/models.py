@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-import datetime
+# import datetime  # pai
 import os
 import textwrap
 
@@ -10,6 +10,7 @@ from django.db import DEFAULT_DB_ALIAS, models
 from django.db.transaction import Atomic, get_connection
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _  # pai
 
 from filer.fields.file import FilerFileField  # pai
 
@@ -76,9 +77,12 @@ class LockedAtomicTransaction(Atomic):
 
 
 class TaskList(models.Model):
-    name = models.CharField(max_length=60)
-    slug = models.SlugField(default="")
-    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    name = models.CharField(max_length=60, verbose_name=_('name'))
+    slug = models.SlugField(default="", verbose_name=_('slug'))
+    group = models.ForeignKey(Group, verbose_name=_('group'), on_delete=models.CASCADE)
+
+    # is_active = models.BooleanField(verbose_name=_('is active'), default=True)  # pai
+    # is_scaffold = models.BooleanField(verbose_name=_('is scaffold'), default=False)  # pai
 
     def __str__(self):
         return self.name
@@ -108,14 +112,15 @@ class TaskList(models.Model):
 
 
 class Task(models.Model):
-    title = models.CharField(max_length=140)
-    task_list = models.ForeignKey(TaskList, on_delete=models.CASCADE, null=True)
-    created_date = models.DateTimeField(default=timezone.now, blank=True, null=True)  # pai
-    due_date = models.DateTimeField(blank=True, null=True)  # pai
-    completed = models.BooleanField(default=False)
-    completed_date = models.DateTimeField(blank=True, null=True)  # pai
+    title = models.CharField(max_length=140, verbose_name=_('title'))
+    task_list = models.ForeignKey(TaskList, verbose_name=_('task list'), on_delete=models.CASCADE, null=True)
+    created_date = models.DateTimeField(verbose_name=_('created date'), default=timezone.now, blank=True, null=True)  # pai
+    due_date = models.DateTimeField(verbose_name=_('due date'), blank=True, null=True)  # pai
+    completed = models.BooleanField(verbose_name=_('completed'), default=False)
+    completed_date = models.DateTimeField(verbose_name=_('completed date'), blank=True, null=True)  # pai
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name=_('created by'),
         null=True,
         blank=True,
         related_name="todo_created_by",
@@ -123,13 +128,17 @@ class Task(models.Model):
     )
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name=_('assigned to'),
         blank=True,
         null=True,
         related_name="todo_assigned_to",
         on_delete=models.CASCADE,
     )
-    note = models.TextField(blank=True, null=True)
-    priority = models.PositiveIntegerField(blank=True, null=True)
+    note = models.TextField(verbose_name=_('note'), blank=True, null=True)
+    priority = models.PositiveIntegerField(verbose_name=_('priority'), blank=True, null=True)
+
+    #is_active = models.BooleanField(verbose_name=_('is active'), default=True)  # pai
+    #is_scaffold = models.BooleanField(verbose_name=_('is scaffold'), default=False)  # pai
 
     # Has due date for an instance of this object passed?
     def overdue_status(self):
@@ -177,14 +186,14 @@ class Comment(models.Model):
     """
 
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True
+        settings.AUTH_USER_MODEL, verbose_name=_('author'), on_delete=models.CASCADE, blank=True, null=True
     )
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
-    date = models.DateTimeField(default=timezone.now)
-    email_from = models.CharField(max_length=320, blank=True, null=True)
-    email_message_id = models.CharField(max_length=255, blank=True, null=True)
+    task = models.ForeignKey(Task, verbose_name=_('task'), on_delete=models.CASCADE)
+    date = models.DateTimeField(verbose_name=_('date'), default=timezone.now)
+    email_from = models.CharField(verbose_name=_('email from'), max_length=320, blank=True, null=True)
+    email_message_id = models.CharField(verbose_name=_('email message id'), max_length=255, blank=True, null=True)
 
-    body = models.TextField(blank=True)
+    body = models.TextField(verbose_name=_('body'), blank=True)
 
     class Meta:
         # an email should only appear once per task
@@ -213,9 +222,9 @@ class Attachment(models.Model):
     Defines a generic file attachment for use in M2M relation with Task.
     """
 
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
-    added_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    timestamp = models.DateTimeField(default=timezone.now)
+    task = models.ForeignKey(Task, verbose_name=_('task'), on_delete=models.CASCADE)
+    added_by = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('added by'), on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(verbose_name=_('timestamp'), default=timezone.now)
     # pai
     # file = models.FileField(upload_to=get_attachment_upload_dir, max_length=255)
     file = models.FileField(storage=custom_fs,
