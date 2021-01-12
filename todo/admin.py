@@ -38,10 +38,6 @@ export_to_csv.short_description = _("Export to CSV")
 class TaskListAdmin(admin.ModelAdmin):
     list_display = ("name", "slug", "group", "is_active", "is_scaffold")
 
-    def get_queryset(self, request):
-        # show all objects
-        return self.model.all_objects.get_queryset()
-
 
 class TaskAdmin(admin.ModelAdmin):
     list_display = ("title", "created_date", "task_list", "completed", "priority", "due_date", "is_active", "is_scaffold")
@@ -49,10 +45,6 @@ class TaskAdmin(admin.ModelAdmin):
     ordering = ("priority",)
     search_fields = ("title",)
     actions = [export_to_csv]
-
-    def get_queryset(self, request):
-        # show all objects
-        return self.model.all_objects.get_queryset()
 
 
 class CommentAdmin(admin.ModelAdmin):

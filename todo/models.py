@@ -15,7 +15,6 @@ from django.utils.translation import gettext_lazy as _  # pai
 from filer.fields.file import FilerFileField  # pai
 
 from .storage import custom_fs  # pai
-from .managers import ActiveModelsManager  # pai
 
 
 def get_attachment_upload_dir(instance, filename):
@@ -85,12 +84,11 @@ class TaskList(models.Model):
     is_active = models.BooleanField(verbose_name=_('is active'), default=True)  # pai
     is_scaffold = models.BooleanField(verbose_name=_('is scaffold'), default=False)  # pai
 
-    # pai
-    objects = ActiveModelsManager()
-    all_objects = models.Manager()
-
     def __str__(self):
-        return self.name
+        if self.is_scaffold:
+            return self.name + ' (scaffold)'
+        else:
+            return self.name
 
     class Meta:
         ordering = ["name"]
@@ -156,10 +154,6 @@ class Task(models.Model):
 
     respects_priority = models.BooleanField(verbose_name=_('respects priority'), default=False)  # pai
 
-    # pai
-    objects = ActiveModelsManager()
-    all_objects = models.Manager()
-
     # Has due date for an instance of this object passed?
     def overdue_status(self):
         "Returns whether the Tasks's due date has passed or not."
@@ -168,7 +162,10 @@ class Task(models.Model):
             return True
 
     def __str__(self):
-        return self.title
+        if self.is_scaffold:
+            return self.title + ' (scaffold)'
+        else:
+            return self.title
 
     def get_absolute_url(self):
         return reverse("todo:task_detail", kwargs={"task_id": self.id})
