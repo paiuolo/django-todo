@@ -4,6 +4,7 @@ import datetime
 from django.contrib import admin
 from django.http import HttpResponse
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _  # pai
 
 from todo.models import Attachment, Comment, Task, TaskList
 
@@ -31,15 +32,27 @@ def export_to_csv(modeladmin, request, queryset):
     return response
 
 
-export_to_csv.short_description = "Export to CSV"
+export_to_csv.short_description = _("Export to CSV")
+
+
+class TaskListAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "group", "is_active", "is_scaffold")
+
+    def get_queryset(self, request):
+        # show all objects
+        return self.model.all_objects.get_queryset()
 
 
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ("title", "task_list", "completed", "priority", "due_date")
+    list_display = ("title", "task_list", "completed", "priority", "due_date", "is_active", "is_scaffold")
     list_filter = ("task_list",)
     ordering = ("priority",)
     search_fields = ("title",)
     actions = [export_to_csv]
+
+    def get_queryset(self, request):
+        # show all objects
+        return self.model.all_objects.get_queryset()
 
 
 class CommentAdmin(admin.ModelAdmin):
@@ -51,7 +64,7 @@ class AttachmentAdmin(admin.ModelAdmin):
     autocomplete_fields = ["added_by", "task"]
 
 
-admin.site.register(TaskList)
+admin.site.register(TaskList, TaskListAdmin)
 admin.site.register(Comment, CommentAdmin)
 admin.site.register(Task, TaskAdmin)
 admin.site.register(Attachment, AttachmentAdmin)
