@@ -4,6 +4,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _  # pai
 
 from todo.models import Task
 from todo.utils import toggle_task_completed
@@ -34,8 +35,11 @@ def toggle_done(request, task_id: int) -> HttpResponse:
             ):
                 raise PermissionDenied
 
-        toggle_task_completed(task.id, user=request.user)
-        messages.success(request, "Task status changed for '{}'".format(task.title))
+        toggled = toggle_task_completed(task.id, user=request.user)
+        if toggled:
+            messages.success(request, _("Task completion status changed for ") + '"' + task.title + '".')
+        else:
+            messages.error(request, _("Can not change completion status for ") + '"' + task.title + '".')
 
         redir_url = reverse(
             "todo:list_detail",

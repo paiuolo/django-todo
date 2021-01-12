@@ -7,6 +7,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse  # , Http404  # pai
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _  # pai
 
 from todo.defaults import defaults
 from todo.features import HAS_TASK_MERGE
@@ -40,7 +41,7 @@ def handle_add_comment(request, task):
         subject='New comment posted on task "{}"'.format(task.title),
     )
 
-    messages.success(request, "Comment posted. Notification email sent to thread participants.")
+    messages.success(request, _("Comment posted. Notification email sent to thread participants."))
 
 
 @login_required
@@ -99,7 +100,7 @@ def task_detail(request, task_id: int) -> HttpResponse:
             item.note = bleach.clean(form.cleaned_data["note"], strip=True)
             item.title = bleach.clean(form.cleaned_data["title"], strip=True)
             item.save()
-            messages.success(request, "The task has been edited.")
+            messages.success(request, _("The task has been edited."))
             return redirect(
                 "todo:list_detail", list_id=task.task_list.id, list_slug=task.task_list.slug
             )
@@ -110,7 +111,9 @@ def task_detail(request, task_id: int) -> HttpResponse:
     if request.POST.get("toggle_done"):
         results_changed = toggle_task_completed(task.id, user=request.user)
         if results_changed:
-            messages.success(request, f"Changed completion status for task {task.id}")
+            messages.success(request, _("Task completion status changed for ") + '"' + task.title + '".')
+        else:
+            messages.error(request, _("Can not change completion status for ") + '"' + task.title + '".')
 
         return redirect("todo:task_detail", task_id=task.id)
 

@@ -167,10 +167,33 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
     """Toggle the `completed` bool on Task from True to False or vice versa."""
     try:
         task = Task.objects.get(id=task_id)
+
+        # task respects_priority checks
+        if task.completed:
+            if task.respects_priority:
+                previous_complete_tasks = Task.objects.filter(priority__gt=task.priority, completed=True)
+                for t in previous_complete_tasks:
+                    # reopen previous tasks
+                    # t.completed_by = None  # keep track
+                    t.completed = False
+                    t.save()
+        else:
+            if task.respects_priority:
+                previous_incomplete_tasks_count = Task.objects.filter(priority__lt=task.priority, completed=False).count()
+                if previous_incomplete_tasks_count > 0:
+                    log.info('Must complete {} previous tasks'.format(previous_incomplete_tasks_count))
+                    return False
+
         task.completed = not task.completed
-        if user is not None:
-            task.completed_by = user
+        if task.completed:
+            if user is not None:
+                task.completed_by = user
+        # keep track
+        # else:
+        #     task.completed_by = None
+
         task.save()
+
         return True
 
     except Task.DoesNotExist:

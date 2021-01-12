@@ -149,6 +149,8 @@ class Task(models.Model):
         on_delete=models.SET_NULL,
     )  # pai
 
+    respects_priority = models.BooleanField(verbose_name=_('respects priority'), default=False)  # pai
+
     # Has due date for an instance of this object passed?
     def overdue_status(self):
         "Returns whether the Tasks's due date has passed or not."
