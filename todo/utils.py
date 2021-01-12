@@ -17,23 +17,28 @@ from filer.models import File as FilerFile, Folder as FilerFolder  # pai
 
 log = logging.getLogger(__name__)
 
+if 'django_sso_app' in settings.INSTALLED_APPS:
+    from django_sso_app.core.permissions import is_staff
 
-def staff_check(user):
-    """If TODO_STAFF_ONLY is set to True, limit view access to staff users only.
-        # FIXME: More granular access control needed - see
-        https://github.com/shacker/django-todo/issues/50
-    """
-
-    if defaults("TODO_STAFF_ONLY"):
-        if 'django_sso_app' in settings.INSTALLED_APPS:
-            from django_sso_app.core.permissions import is_staff
-
+    def staff_check(user):
+        if defaults("TODO_STAFF_ONLY"):
             return is_staff(user)
         else:
+            # If unset or False, allow all logged in users
+            return True
+
+else:
+    def staff_check(user):
+        """If TODO_STAFF_ONLY is set to True, limit view access to staff users only.
+            # FIXME: More granular access control needed - see
+            https://github.com/shacker/django-todo/issues/50
+        """
+
+        if defaults("TODO_STAFF_ONLY"):
             return user.is_staff
-    else:
-        # If unset or False, allow all logged in users
-        return True
+        else:
+            # If unset or False, allow all logged in users
+            return True
 
 
 def user_can_read_task(task, user):
