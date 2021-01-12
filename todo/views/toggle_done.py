@@ -29,7 +29,8 @@ def toggle_done(request, task_id: int) -> HttpResponse:
                 (task.created_by == request.user)
                 or (request.user.is_superuser)
                 or (task.assigned_to == request.user)
-                or (task.task_list.group in request.user.groups.all())
+                or staff_check(request.user)  # pai
+                # or (task.task_list.group in request.user.groups.all())  # pai
             ):
                 raise PermissionDenied
 
