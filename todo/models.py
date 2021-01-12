@@ -81,8 +81,8 @@ class TaskList(models.Model):
     slug = models.SlugField(default="", verbose_name=_('slug'))
     group = models.ForeignKey(Group, verbose_name=_('group'), on_delete=models.CASCADE)
 
-    # is_active = models.BooleanField(verbose_name=_('is active'), default=True)  # pai
-    # is_scaffold = models.BooleanField(verbose_name=_('is scaffold'), default=False)  # pai
+    is_active = models.BooleanField(verbose_name=_('is active'), default=True)  # pai
+    is_scaffold = models.BooleanField(verbose_name=_('is scaffold'), default=False)  # pai
 
     def __str__(self):
         return self.name
@@ -137,8 +137,8 @@ class Task(models.Model):
     note = models.TextField(verbose_name=_('note'), blank=True, null=True)
     priority = models.PositiveIntegerField(verbose_name=_('priority'), blank=True, null=True)
 
-    #is_active = models.BooleanField(verbose_name=_('is active'), default=True)  # pai
-    #is_scaffold = models.BooleanField(verbose_name=_('is scaffold'), default=False)  # pai
+    is_active = models.BooleanField(verbose_name=_('is active'), default=True)  # pai
+    is_scaffold = models.BooleanField(verbose_name=_('is scaffold'), default=False)  # pai
 
     # Has due date for an instance of this object passed?
     def overdue_status(self):
