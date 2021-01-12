@@ -44,7 +44,7 @@ class TaskListAdmin(admin.ModelAdmin):
 
 
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ("title", "task_list", "completed", "priority", "due_date", "is_active", "is_scaffold")
+    list_display = ("title", "created_date", "task_list", "completed", "priority", "due_date", "is_active", "is_scaffold")
     list_filter = ("task_list",)
     ordering = ("priority",)
     search_fields = ("title",)

@@ -56,6 +56,10 @@ class AddEditTaskForm(ModelForm):
 
     completed = forms.BooleanField(required=False)
 
+    # pai
+    is_active = forms.BooleanField(required=False, initial=True)
+    is_scaffold = forms.BooleanField(required=False, initial=False)
+
     def clean_created_by(self):
         """Keep the existing created_by regardless of anything coming from the submitted form.
         If creating a new task, then created_by will be None, but we set it before saving."""

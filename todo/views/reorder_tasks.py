@@ -2,13 +2,15 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
+from django.core.exceptions import PermissionDenied  # pai
+
 from todo.models import Task
 from todo.utils import staff_check
 
 
 @csrf_exempt
 @login_required
-@user_passes_test(staff_check)
+# @user_passes_test(staff_check)  # pai
 def reorder_tasks(request) -> HttpResponse:
     """Handle task re-ordering (priorities) from JQuery drag/drop in list_detail.html
     """
@@ -22,6 +24,12 @@ def reorder_tasks(request) -> HttpResponse:
         for id in newtasklist:
             try:
                 task = Task.objects.get(pk=id)
+
+                # pai
+                if not staff_check(request.user):
+                    if not task.created_by == request.user:  # owner only
+                        raise PermissionDenied
+
                 task.priority = i
                 task.save()
                 i += 1
