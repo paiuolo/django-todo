@@ -163,11 +163,13 @@ def send_email_to_thread_participants(task, msg_body, user, subject=None):
     todo_send_mail(user, task, email_subject, email_body, recip_list)
 
 
-def toggle_task_completed(task_id: int) -> bool:
+def toggle_task_completed(task_id: int, user=None) -> bool:
     """Toggle the `completed` bool on Task from True to False or vice versa."""
     try:
         task = Task.objects.get(id=task_id)
         task.completed = not task.completed
+        if user is not None:
+            task.completed_by = user
         task.save()
         return True
 

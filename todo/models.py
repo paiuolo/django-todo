@@ -140,6 +140,15 @@ class Task(models.Model):
     is_active = models.BooleanField(verbose_name=_('is active'), default=True)  # pai
     is_scaffold = models.BooleanField(verbose_name=_('is scaffold'), default=False)  # pai
 
+    completed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_('completed by'),
+        blank=True,
+        null=True,
+        related_name="todo_completed_by",
+        on_delete=models.SET_NULL,
+    )  # pai
+
     # Has due date for an instance of this object passed?
     def overdue_status(self):
         "Returns whether the Tasks's due date has passed or not."

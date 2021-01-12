@@ -22,7 +22,7 @@ def toggle_done(request, task_id: int) -> HttpResponse:
         # Permissions
         # pai
         if not staff_check(request.user):
-            if not task.created_by == request.user:
+            if not task.assigned_to == request.user:
                 raise PermissionDenied
         else:
             if not (
@@ -34,7 +34,7 @@ def toggle_done(request, task_id: int) -> HttpResponse:
             ):
                 raise PermissionDenied
 
-        toggle_task_completed(task.id)
+        toggle_task_completed(task.id, user=request.user)
         messages.success(request, "Task status changed for '{}'".format(task.title))
 
         redir_url = reverse(

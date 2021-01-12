@@ -108,7 +108,7 @@ def task_detail(request, task_id: int) -> HttpResponse:
 
     # Mark complete
     if request.POST.get("toggle_done"):
-        results_changed = toggle_task_completed(task.id)
+        results_changed = toggle_task_completed(task.id, user=request.user)
         if results_changed:
             messages.success(request, f"Changed completion status for task {task.id}")
 
