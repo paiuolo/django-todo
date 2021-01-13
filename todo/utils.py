@@ -270,6 +270,6 @@ def add_attachment_file(request, file_data, task):
 
 def get_user_tasks(task_list, user, completed=None):
     if completed is None:
-        return task_list.task_set.filter(Q(created_by=user) | Q(assigned_to=user))
+        return task_list.task_set.filter(is_active=True, is_scaffold=False).filter(Q(created_by=user) | Q(assigned_to=user))
     else:
-        return task_list.task_set.filter(completed=completed).filter(Q(created_by=user) | Q(assigned_to=user))
+        return task_list.task_set.filter(is_active=True, is_scaffold=False).filter(completed=completed).filter(Q(created_by=user) | Q(assigned_to=user))

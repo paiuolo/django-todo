@@ -60,7 +60,7 @@ class TaskDetailApiView(ReadOnlyModelViewSet):
         if not staff_check(user):
             return Task.objects.filter(Q(created_by=user) | Q(assigned_to=user))
         else:
-            return Task.objects.all()
+            return Task.objects.filter(is_active=True, is_scaffold=False)
 
     def retrieve(self, request, pk=None, *args, **kwargs):
         return super(TaskDetailApiView, self).retrieve(request, pk, *args, **kwargs)

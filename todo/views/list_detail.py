@@ -24,16 +24,16 @@ def list_detail(request, list_id=None, list_slug=None, view_completed=False) -> 
 
     # Which tasks to show on this list view?
     if list_slug == "mine":
-        tasks = Task.objects.filter(assigned_to=request.user)
+        tasks = Task.objects.filter(is_active=True, is_scaffold=False).filter(assigned_to=request.user)
     else:
         # Show a specific list, ensuring permissions.
         task_list = get_object_or_404(TaskList, id=list_id)
         # pai
         #if task_list.group not in request.user.groups.all() and not request.user.is_superuser:
         if not staff_check(request.user):
-            tasks = Task.objects.filter(Q(created_by=request.user) | Q(assigned_to=request.user)).filter(task_list=task_list)
+            tasks = Task.objects.filter(is_active=True, is_scaffold=False).filter(Q(created_by=request.user) | Q(assigned_to=request.user)).filter(task_list=task_list)
         else:
-            tasks = Task.objects.filter(task_list=task_list.id)
+            tasks = Task.objects.filter(is_active=True, is_scaffold=False).filter(task_list=task_list.id)
 
     # Additional filtering
     if view_completed:

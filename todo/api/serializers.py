@@ -207,8 +207,8 @@ class TaskListDetailSerializer(serializers.ModelSerializer, UrlObjectSerializer)
         user = request.user
 
         if not staff_check(user):
-            tasks = Task.objects.filter(Q(created_by=user) | Q(assigned_to=user)).filter(task_list=instance)
+            tasks = Task.objects.filter(is_active=True, is_scaffold=False).filter(Q(created_by=user) | Q(assigned_to=user)).filter(task_list=instance)
         else:
-            tasks = Task.objects.filter(task_list=instance.id)
+            tasks = Task.objects.filter(is_active=True, is_scaffold=False).filter(task_list=instance.id)
 
         return PartialTaskSerializer(tasks, many=True, context=self.context).data

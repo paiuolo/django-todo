@@ -21,7 +21,7 @@ class TaskAutocomplete(autocomplete.Select2QuerySetView):
         if not self.request.user.is_authenticated:
             return Task.objects.none()
 
-        qs = Task.objects.filter(task_list=self.task.task_list).exclude(pk=self.task.pk)
+        qs = Task.objects.filter(is_active=True, is_scaffold=False).filter(task_list=self.task.task_list).exclude(pk=self.task.pk)
 
         if self.q:
             qs = qs.filter(title__istartswith=self.q)
