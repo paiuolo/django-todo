@@ -22,18 +22,14 @@ def toggle_done(request, task_id: int) -> HttpResponse:
 
         # Permissions
         # pai
-        if not staff_check(request.user):
-            if not task.assigned_to == request.user:
-                raise PermissionDenied
-        else:
-            if not (
-                (task.created_by == request.user)
-                or (request.user.is_superuser)
-                or (task.assigned_to == request.user)
-                or staff_check(request.user)  # pai
-                # or (task.task_list.group in request.user.groups.all())  # pai
-            ):
-                raise PermissionDenied
+        if not (
+            (task.created_by == request.user)
+            or request.user.is_superuser
+            or (task.assigned_to == request.user)
+            or staff_check(request.user)  # pai
+            or ((task.assigned_to is None) and (task.task_list.group in request.user.groups.all()))  # pai
+        ):
+            raise PermissionDenied
 
         toggled = toggle_task_completed(task.id, user=request.user)
         if toggled:

@@ -9,7 +9,7 @@ from django.db.models import Q  # pai
 
 from todo.forms import AddEditTaskForm
 from todo.models import Task, TaskList
-from todo.utils import send_notify_mail, staff_check
+from todo.utils import send_notify_mail, staff_check, get_user_tasks
 
 
 @login_required
@@ -24,16 +24,19 @@ def list_detail(request, list_id=None, list_slug=None, view_completed=False) -> 
 
     # Which tasks to show on this list view?
     if list_slug == "mine":
-        tasks = Task.objects.filter(is_active=True, is_scaffold=False).filter(assigned_to=request.user)
+        tasks = Task.objects.filter(is_active=True,
+                                    is_scaffold=False).filter(Q(assigned_to=request.user) |
+                                                              Q(assigned_to__isnull=True,
+                                                                task_list__group__in=request.user.groups.all()))
     else:
         # Show a specific list, ensuring permissions.
         task_list = get_object_or_404(TaskList, id=list_id)
         # pai
         #if task_list.group not in request.user.groups.all() and not request.user.is_superuser:
-        if not staff_check(request.user):
-            tasks = Task.objects.filter(is_active=True, is_scaffold=False).filter(Q(created_by=request.user) | Q(assigned_to=request.user)).filter(task_list=task_list)
-        else:
+        if staff_check(request.user):
             tasks = Task.objects.filter(is_active=True, is_scaffold=False).filter(task_list=task_list.id)
+        else:
+            tasks = get_user_tasks(task_list, request.user)
 
     # Additional filtering
     if view_completed:

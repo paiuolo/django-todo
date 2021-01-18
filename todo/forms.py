@@ -5,6 +5,7 @@ from django.conf import settings  # pai
 from django.contrib.auth import get_user_model  # pai
 
 from todo.models import Task, TaskList
+from todo.utils import staff_check  # pai
 
 
 class AddTaskListForm(ModelForm):
@@ -14,7 +15,11 @@ class AddTaskListForm(ModelForm):
 
     def __init__(self, user, *args, **kwargs):
         super(AddTaskListForm, self).__init__(*args, **kwargs)
-        self.fields["group"].queryset = Group.objects.filter(user=user)
+        # pai
+        if staff_check(user):
+            self.fields["group"].queryset = Group.objects.all()
+        else:
+            self.fields["group"].queryset = user.groups.all()
         self.fields["group"].widget.attrs = {
             "id": "id_group",
             "class": "custom-select mb-3",

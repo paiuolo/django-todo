@@ -9,6 +9,7 @@ from django.core import mail
 from django.template.loader import render_to_string
 from django.utils import timezone  # pai
 from django.db.models import Q  # pai
+from django.db import transaction # pai
 
 from todo.defaults import defaults
 from todo.models import Attachment, Comment, Task
@@ -45,7 +46,8 @@ def user_can_read_task(task, user):
     # return task.task_list.group in user.groups.all() or user.is_superuser
     # pai
     if not staff_check(user):
-        return task.created_by == user or task.assigned_to == user
+        return task.created_by == user or task.assigned_to == user or (task.assigned_to == None and
+                                                                       task.task_list.group in user.groups.all())
 
     return task.task_list.group in user.groups.all() or user.is_superuser
 
@@ -163,6 +165,14 @@ def send_email_to_thread_participants(task, msg_body, user, subject=None):
     todo_send_mail(user, task, email_subject, email_body, recip_list)
 
 
+def check_previous_task_list_complete(task_list):
+    if task_list.previous_task_list:
+        return task_list.completed and check_previous_task_list_complete(task_list.previous_task_list)
+    else:
+        return True
+
+
+@transaction.atomic
 def toggle_task_completed(task_id: int, user=None) -> bool:
     """Toggle the `completed` bool on Task from True to False or vice versa."""
     try:
@@ -171,7 +181,10 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
         # task respects_priority checks
         if task.completed:
             if task.respects_priority:
-                previous_complete_tasks = Task.objects.filter(priority__gt=task.priority, completed=True)
+                previous_complete_tasks = Task.objects.filter(is_scaffold=False, is_active=True) \
+                    .filter(task_list=task.task_list) \
+                    .filter(procedure_uuid=task.procedure_uuid) \
+                    .filter(priority__gt=task.priority, completed=True)
                 for t in previous_complete_tasks:
                     # reopen previous tasks
                     # t.completed_by = None  # keep track
@@ -179,10 +192,17 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
                     t.save()
         else:
             if task.respects_priority:
-                previous_incomplete_tasks_count = Task.objects.filter(priority__lt=task.priority, completed=False).count()
+                previous_incomplete_tasks_count = Task.objects.filter(is_scaffold=False, is_active=True) \
+                    .filter(task_list=task.task_list) \
+                    .filter(procedure_uuid=task.procedure_uuid) \
+                    .filter(priority__lt=task.priority, completed=False) \
+                    .count()
                 if previous_incomplete_tasks_count > 0:
                     log.info('Must complete {} previous tasks'.format(previous_incomplete_tasks_count))
                     return False
+                else:
+                    if not check_previous_task_list_complete(task.task_list):
+                        return False
 
         task.completed = not task.completed
         if task.completed:
@@ -218,7 +238,7 @@ def remove_attachment_file(attachment_id: int) -> bool:
 
 
 # pai
-
+@transaction.atomic
 def add_attachment_file(request, file_data, task):
     if file_data.size > defaults("TODO_MAXIMUM_ATTACHMENT_SIZE"):
         raise Exception("File exceeds maximum attachment size.")
@@ -269,7 +289,13 @@ def add_attachment_file(request, file_data, task):
 
 
 def get_user_tasks(task_list, user, completed=None):
-    if completed is None:
-        return task_list.task_set.filter(is_active=True, is_scaffold=False).filter(Q(created_by=user) | Q(assigned_to=user))
-    else:
-        return task_list.task_set.filter(is_active=True, is_scaffold=False).filter(completed=completed).filter(Q(created_by=user) | Q(assigned_to=user))
+    lists = task_list.task_set\
+        .filter(is_active=True, is_scaffold=False)\
+        .filter(Q(created_by=user) |
+                Q(assigned_to=user) |
+                Q(assigned_to__isnull=True, task_list__group__in=user.groups.all()))
+
+    if completed is not None:
+        lists = lists.filter(completed=completed)
+
+    return lists

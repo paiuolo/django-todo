@@ -36,11 +36,11 @@ export_to_csv.short_description = _("Export to CSV")
 
 
 class TaskListAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "group", "is_active", "is_scaffold")
+    list_display = ("name", "slug", "group", "is_active", "previous_task_list")
 
 
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ("title", "created_date", "task_list", "completed", "priority", "due_date", "is_active", "is_scaffold")
+    list_display = ("title", "created_by", "created_date", "task_list", "completed", "priority", "due_date", "is_active", "is_scaffold", "assigned_to")
     list_filter = ("task_list",)
     ordering = ("priority",)
     search_fields = ("title",)

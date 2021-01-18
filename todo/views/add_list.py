@@ -37,11 +37,15 @@ def add_list(request) -> HttpResponse:
                     "Most likely a list with the same name in the same group already exists.",
                 )
     else:
+        # pai
+        """
         if request.user.groups.all().count() == 1:
             # FIXME: Assuming first of user's groups here; better to prompt for group
             form = AddTaskListForm(request.user, initial={"group": request.user.groups.all()[0]})
         else:
             form = AddTaskListForm(request.user)
+        """
+        form = AddTaskListForm(request.user)
 
     context = {"form": form}
 

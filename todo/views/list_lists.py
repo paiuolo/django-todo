@@ -29,7 +29,7 @@ def list_lists(request) -> HttpResponse:
         )
 
     # Superusers see all lists
-    lists = TaskList.objects.filter(is_scaffold=False, is_active=True).order_by("group__name", "name")
+    lists = TaskList.objects.filter(is_active=True).order_by("group__name", "name")
     if not request.user.is_superuser:
         lists = lists.filter(group__in=request.user.groups.all())
 
@@ -46,11 +46,9 @@ def list_lists(request) -> HttpResponse:
                                 Q(created_by=request.user) | Q(assigned_to=request.user))  # pai
                     .count()
             )
-            print(task_count)
         else:
             task_count = (
                 Task.objects.filter(is_active=True, is_scaffold=False).filter(completed=False)
-                .filter(task_list__group__in=request.user.groups.all())
                 .count()
             )
 

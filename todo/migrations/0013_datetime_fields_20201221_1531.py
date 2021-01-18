@@ -7,7 +7,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('todo', '0012_auto_20201217_1211'),
+        ('todo', '0012_filer_file_20201217_1211'),
     ]
 
     operations = [

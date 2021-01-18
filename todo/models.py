@@ -11,6 +11,7 @@ from django.db.transaction import Atomic, get_connection
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _  # pai
+from django.db import transaction  # pai
 
 from filer.fields.file import FilerFileField  # pai
 
@@ -78,17 +79,21 @@ class LockedAtomicTransaction(Atomic):
 
 class TaskList(models.Model):
     name = models.CharField(max_length=60, verbose_name=_('name'))
-    slug = models.SlugField(default="", verbose_name=_('slug'))
+    slug = models.SlugField(default="", verbose_name=_('slug'), max_length=255)
     group = models.ForeignKey(Group, verbose_name=_('group'), on_delete=models.CASCADE)
 
     is_active = models.BooleanField(verbose_name=_('is active'), default=True)  # pai
-    is_scaffold = models.BooleanField(verbose_name=_('is scaffold'), default=False)  # pai
+
+    previous_task_list = models.ForeignKey('self', verbose_name=_('previous task list'),
+                                           on_delete=models.SET_NULL, null=True, blank=True)  # pai
 
     def __str__(self):
-        if self.is_scaffold:
-            return self.name + ' (scaffold)'
-        else:
-            return self.name
+        ret = self.name
+
+        if not self.is_active:
+            ret += ' [inactive]'
+
+        return ret
 
     class Meta:
         ordering = ["name"]
@@ -112,6 +117,10 @@ class TaskList(models.Model):
             return 0
         else:
             return int((self.task_set.filter(completed=True).count() * 100) / self.task_set.count())
+
+    @property
+    def completed(self):
+        return self.task_set.count() == self.task_set.filter(completed=True).count()
 
 
 class Task(models.Model):
@@ -143,6 +152,8 @@ class Task(models.Model):
     is_active = models.BooleanField(verbose_name=_('is active'), default=True)  # pai
     is_scaffold = models.BooleanField(verbose_name=_('is scaffold'), default=False)  # pai
 
+    procedure_uuid = models.CharField(max_length=36, null=True, blank=True, db_index=True)  # pai
+
     completed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name=_('completed by'),
@@ -154,6 +165,11 @@ class Task(models.Model):
 
     respects_priority = models.BooleanField(verbose_name=_('respects priority'), default=False)  # pai
 
+    # on_complete_notify = models ...
+
+    class Meta:
+        ordering = ["priority", "created_date"]
+
     # Has due date for an instance of this object passed?
     def overdue_status(self):
         "Returns whether the Tasks's due date has passed or not."
@@ -162,10 +178,13 @@ class Task(models.Model):
             return True
 
     def __str__(self):
+        ret = self.title
         if self.is_scaffold:
-            return self.title + ' (scaffold)'
-        else:
-            return self.title
+            ret += ' [scaffold]'
+        if not self.is_active:
+            ret += ' [inactive]'
+
+        return ret
 
     def get_absolute_url(self):
         return reverse("todo:task_detail", kwargs={"task_id": self.id})
@@ -191,9 +210,6 @@ class Task(models.Model):
         with LockedAtomicTransaction(Comment):
             Comment.objects.filter(task=self).update(task=merge_target)
             self.delete()
-
-    class Meta:
-        ordering = ["priority", "created_date"]
 
 
 class Comment(models.Model):

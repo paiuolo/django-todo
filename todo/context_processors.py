@@ -11,5 +11,6 @@ def todo_context(request):
         task_lists = TaskList.objects.filter(group__in=request.user.groups.all())
 
     return {
-        "TASK_LISTS": task_lists
+        "TASK_LISTS": task_lists,
+        "TODO_ENABLE_ISSUE_TRACKER": getattr(settings, 'TODO_ENABLE_ISSUE_TRACKER', True)
     }
