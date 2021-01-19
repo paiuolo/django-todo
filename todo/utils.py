@@ -219,7 +219,7 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
                     log.info('Must complete {} previous tasks'.format(previous_incomplete_tasks_count))
                     return False
                 else:
-                    if not check_previous_task_list_complete(task.task_list):
+                    if not check_previous_task_list_complete(task.task_list, task.procedure_uuid):
                         log.info('Must complete previous tasks_lists')
                         return False
 
