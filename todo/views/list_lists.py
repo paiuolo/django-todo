@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.db.models import Q  # pai
 from django.utils import timezone  # pai
+from django.core.paginator import Paginator  # pai
 
 from todo.forms import SearchForm
 from todo.models import Task, TaskList
@@ -22,35 +23,38 @@ def list_lists(request) -> HttpResponse:
     searchform = SearchForm(auto_id=False)
 
     # Make sure user belongs to at least one group.
-    if not request.user.groups.all().exists():
-        messages.warning(
-            request,
-            "You do not yet belong to any groups. Ask your administrator to add you to one.",
+    if not request.user.is_superuser:  # pai
+        if not request.user.groups.all().exists():
+            messages.warning(
+                request,
+                "You do not yet belong to any groups. Ask your administrator to add you to one.",
+            )
+
+    lists = TaskList.objects.filter(is_active=True).order_by("group__name", "name")
+
+    # superusers see all lists, so count shouldn't filter by just lists the admin belongs to  # pai disabled
+    if not staff_check(request.user):
+        task_count = (
+            Task.objects.filter(is_active=True).filter(completed=False)
+                .filter(task_list__group__in=request.user.groups.all()).filter(
+                            Q(created_by=request.user) | Q(assigned_to=request.user))  # pai
+                .count()
         )
 
-    # Superusers see all lists
-    lists = TaskList.objects.filter(is_active=True).order_by("group__name", "name")
-    if not request.user.is_superuser:
         lists = lists.filter(group__in=request.user.groups.all())
+    else:
+        task_count = (
+            Task.objects.filter(is_active=True).filter(completed=False)
+            .count()
+        )
 
     list_count = lists.count()
 
-    # superusers see all lists, so count shouldn't filter by just lists the admin belongs to
-    if request.user.is_superuser:
-        task_count = Task.objects.filter(is_active=True, is_scaffold=False).filter(completed=False).count()
-    else:
-        if not staff_check(request.user):
-            task_count = (
-                Task.objects.filter(is_active=True, is_scaffold=False).filter(completed=False)
-                    .filter(task_list__group__in=request.user.groups.all()).filter(
-                                Q(created_by=request.user) | Q(assigned_to=request.user))  # pai
-                    .count()
-            )
-        else:
-            task_count = (
-                Task.objects.filter(is_active=True, is_scaffold=False).filter(completed=False)
-                .count()
-            )
+    # Pagination
+    paginator = Paginator(lists, 20)
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     context = {
         "lists": lists,
@@ -58,6 +62,7 @@ def list_lists(request) -> HttpResponse:
         "searchform": searchform,
         "list_count": list_count,
         "task_count": task_count,
+        'page_obj': page_obj
     }
 
     return render(request, "todo/list_lists.html", context)

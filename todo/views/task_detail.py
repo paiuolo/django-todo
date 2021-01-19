@@ -67,7 +67,7 @@ def task_detail(request, task_id: int) -> HttpResponse:
 
         class MergeForm(forms.Form):
             merge_target = forms.ModelChoiceField(
-                queryset=Task.objects.filter(is_active=True, is_scaffold=False),
+                queryset=Task.objects.filter(is_active=True),
                 widget=autocomplete.ModelSelect2(
                     url=reverse("todo:task_autocomplete", kwargs={"task_id": task_id})
                 ),

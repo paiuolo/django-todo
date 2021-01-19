@@ -150,7 +150,6 @@ class Task(models.Model):
     priority = models.PositiveIntegerField(verbose_name=_('priority'), blank=True, null=True)
 
     is_active = models.BooleanField(verbose_name=_('is active'), default=True)  # pai
-    is_scaffold = models.BooleanField(verbose_name=_('is scaffold'), default=False)  # pai
 
     procedure_uuid = models.CharField(max_length=36, null=True, blank=True, db_index=True)  # pai
 
@@ -168,7 +167,7 @@ class Task(models.Model):
     # on_complete_notify = models ...
 
     class Meta:
-        ordering = ["priority", "created_date"]
+        ordering = ["procedure_uuid", "priority", "created_date"]
 
     # Has due date for an instance of this object passed?
     def overdue_status(self):
@@ -179,8 +178,6 @@ class Task(models.Model):
 
     def __str__(self):
         ret = self.title
-        if self.is_scaffold:
-            ret += ' [scaffold]'
         if not self.is_active:
             ret += ' [inactive]'
 

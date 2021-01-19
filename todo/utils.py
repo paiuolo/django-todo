@@ -181,7 +181,7 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
         # task respects_priority checks
         if task.completed:
             if task.respects_priority:
-                previous_complete_tasks = Task.objects.filter(is_scaffold=False, is_active=True) \
+                previous_complete_tasks = Task.objects.filter(is_active=True) \
                     .filter(task_list=task.task_list) \
                     .filter(procedure_uuid=task.procedure_uuid) \
                     .filter(priority__gt=task.priority, completed=True)
@@ -192,7 +192,7 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
                     t.save()
         else:
             if task.respects_priority:
-                previous_incomplete_tasks_count = Task.objects.filter(is_scaffold=False, is_active=True) \
+                previous_incomplete_tasks_count = Task.objects.filter(is_active=True) \
                     .filter(task_list=task.task_list) \
                     .filter(procedure_uuid=task.procedure_uuid) \
                     .filter(priority__lt=task.priority, completed=False) \
@@ -290,12 +290,33 @@ def add_attachment_file(request, file_data, task):
 
 def get_user_tasks(task_list, user, completed=None):
     lists = task_list.task_set\
-        .filter(is_active=True, is_scaffold=False)\
+        .filter(is_active=True)\
         .filter(Q(created_by=user) |
                 Q(assigned_to=user) |
-                Q(assigned_to__isnull=True, task_list__group__in=user.groups.all()))
+                Q(assigned_to__isnull=True, task_list__group__in=user.groups.all())) \
+        .prefetch_related('created_by', 'assigned_to')
 
     if completed is not None:
         lists = lists.filter(completed=completed)
 
     return lists
+
+
+def user_can_toggle_task_done(user, task):
+    if staff_check(user):
+        return True
+    else:
+        if task.assigned_to is None:
+            if task.task_list.group in user.groups.all():
+                return True
+            else:
+                return False
+        else:
+            return task.assigned_to == user
+
+
+def user_can_view_task_list(user, task_list):
+    if staff_check(user):
+        return True
+    else:
+        return task_list.group in user.groups.all()

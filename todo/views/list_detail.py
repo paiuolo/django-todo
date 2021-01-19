@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Q  # pai
+from django.core.paginator import Paginator
 
 from todo.forms import AddEditTaskForm
 from todo.models import Task, TaskList
@@ -24,18 +25,23 @@ def list_detail(request, list_id=None, list_slug=None, view_completed=False) -> 
 
     # Which tasks to show on this list view?
     if list_slug == "mine":
-        tasks = Task.objects.filter(is_active=True,
-                                    is_scaffold=False).filter(Q(assigned_to=request.user) |
-                                                              Q(assigned_to__isnull=True,
-                                                                task_list__group__in=request.user.groups.all()))
+        tasks = Task.objects.filter(is_active=True).filter(Q(assigned_to=request.user) |
+                                                           Q(assigned_to__isnull=True,
+                                                           task_list__group__in=request.user.groups.all()))
     else:
-        # Show a specific list, ensuring permissions.
-        task_list = get_object_or_404(TaskList, id=list_id)
         # pai
         #if task_list.group not in request.user.groups.all() and not request.user.is_superuser:
         if staff_check(request.user):
-            tasks = Task.objects.filter(is_active=True, is_scaffold=False).filter(task_list=task_list.id)
+            # Show a specific list, ensuring permissions.
+            task_list = get_object_or_404(TaskList, id=list_id)
+
+            tasks = Task.objects.filter(is_active=True) \
+                                .filter(task_list=task_list.id) \
+                                .prefetch_related('created_by', 'assigned_to')
         else:
+            # Show a specific list, ensuring permissions.
+            task_list = get_object_or_404(TaskList, id=list_id, group__in=request.user.groups.all())
+
             tasks = get_user_tasks(task_list, request.user)
 
     # Additional filtering
@@ -79,6 +85,12 @@ def list_detail(request, list_id=None, list_slug=None, view_completed=False) -> 
                 initial={"assigned_to": request.user.id, "priority": 999, "task_list": task_list},
             )
 
+    # Pagination
+    paginator = Paginator(tasks, 20)
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
         "list_id": list_id,
         "list_slug": list_slug,
@@ -86,6 +98,7 @@ def list_detail(request, list_id=None, list_slug=None, view_completed=False) -> 
         "form": form,
         "tasks": tasks,
         "view_completed": view_completed,
+        'page_obj': page_obj
     }
 
     return render(request, "todo/list_detail.html", context)
