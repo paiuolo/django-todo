@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _  # pai
 
 from todo.models import Task
 from todo.utils import toggle_task_completed
-from todo.utils import staff_check
+from todo.utils import staff_check, user_can_toggle_task_done  # pai
 
 
 @login_required
@@ -22,16 +22,17 @@ def toggle_done(request, task_id: int) -> HttpResponse:
 
         # Permissions
         # pai
-        if not (
-            (task.created_by == request.user)
-            or request.user.is_superuser
-            or (task.assigned_to == request.user)
-            or staff_check(request.user)  # pai
-            or ((task.assigned_to is None) and (task.task_list.group in request.user.groups.all()))  # pai
-        ):
+        if not user_can_toggle_task_done(request.user, task):
             raise PermissionDenied
 
-        toggled = toggle_task_completed(task.id, user=request.user)
+        # prevent toggle for specific actions
+        if (request.GET.get('done', False) and task.completed) or \
+           (request.GET.get('not_done', False) and not task.completed):
+            # task has changed completion status
+            toggled = False
+        else:
+            toggled = toggle_task_completed(task.id, user=request.user)
+
         if toggled:
             messages.success(request, _("Task completion status changed for ") + '"' + task.title + '".')
         else:
@@ -41,6 +42,9 @@ def toggle_done(request, task_id: int) -> HttpResponse:
             "todo:list_detail",
             kwargs={"list_id": task.task_list.id, "list_slug": task.task_list.slug},
         )
+
+        if toggled:
+            redir_url = request.GET.get('next', redir_url)
 
         return redirect(redir_url)
 

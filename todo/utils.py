@@ -165,11 +165,25 @@ def send_email_to_thread_participants(task, msg_body, user, subject=None):
     todo_send_mail(user, task, email_subject, email_body, recip_list)
 
 
-def check_previous_task_list_complete(task_list):
-    if task_list.previous_task_list:
-        return task_list.completed and check_previous_task_list_complete(task_list.previous_task_list)
+def check_previous_task_list_complete(task_list, procedure_uuid=None):
+    """
+    Checks previous task list completion status
+    """
+    if task_list is not None and task_list.previous_task_list is not None:
+        return task_list.all_tasks_completed(procedure_uuid) and \
+               check_previous_task_list_complete(task_list.previous_task_list, procedure_uuid)
     else:
         return True
+
+
+def set_all_next_task_lists_not_completed(task_list, procedure_uuid=None):
+    """
+    Set completion status False for next task lists
+    """
+    for tl in task_list.__class__.objects.filter(is_active=True).filter(previous_task_list=task_list):
+        tl.set_all_tasks_not_completed(procedure_uuid)
+
+        set_all_next_task_lists_not_completed(tl, procedure_uuid)
 
 
 @transaction.atomic
@@ -181,15 +195,19 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
         # task respects_priority checks
         if task.completed:
             if task.respects_priority:
-                previous_complete_tasks = Task.objects.filter(is_active=True) \
+                next_completed_tasks = Task.objects.filter(is_active=True) \
                     .filter(task_list=task.task_list) \
                     .filter(procedure_uuid=task.procedure_uuid) \
                     .filter(priority__gt=task.priority, completed=True)
-                for t in previous_complete_tasks:
-                    # reopen previous tasks
+                for t in next_completed_tasks:
+                    # reopen next tasks
                     # t.completed_by = None  # keep track
                     t.completed = False
                     t.save()
+
+                # toggle next task_list's completion status
+                set_all_next_task_lists_not_completed(task.task_list, task.procedure_uuid)
+
         else:
             if task.respects_priority:
                 previous_incomplete_tasks_count = Task.objects.filter(is_active=True) \
@@ -202,9 +220,12 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
                     return False
                 else:
                     if not check_previous_task_list_complete(task.task_list):
+                        log.info('Must complete previous tasks_lists')
                         return False
 
+        # toggle value
         task.completed = not task.completed
+
         if task.completed:
             if user is not None:
                 task.completed_by = user

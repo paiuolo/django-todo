@@ -106,21 +106,30 @@ class TaskList(models.Model):
     def get_absolute_rest_url(self):
         return reverse("todo_api:list_detail", args=[self.pk])
 
-    @property
-    def completed_tasks(self):
-        return self.task_set.filter(completed=True)
+    # pai
+    def set_all_tasks_completed(self, procedure_uuid=None):
+        """
+        Set completion status to True for all tasks
+        """
+        for t in self.task_set.filter(completed=False, procedure_uuid=procedure_uuid):
+            t.completed = True
+            t.save()
 
-    @property
-    def completed_tasks_percentage(self):
-        task_count = self.task_set.count()
-        if task_count == 0:
-            return 0
-        else:
-            return int((self.task_set.filter(completed=True).count() * 100) / self.task_set.count())
+    def set_all_tasks_not_completed(self, procedure_uuid=None):
+        """
+        Set completion status to False for all tasks
+        """
+        for t in self.task_set.filter(completed=True, procedure_uuid=procedure_uuid):
+            t.completed = False
+            t.save()
 
-    @property
-    def completed(self):
-        return self.task_set.count() == self.task_set.filter(completed=True).count()
+    def all_tasks_completed(self, procedure_uuid=None):
+        """
+        Tells if all tasks are completed
+        """
+        return self.task_set.filter(completed=True, procedure_uuid=procedure_uuid).count() == \
+               self.task_set.filter(procedure_uuid=procedure_uuid).count()
+
 
 
 class Task(models.Model):
