@@ -130,6 +130,12 @@ class TaskList(models.Model):
         return self.task_set.filter(completed=True, procedure_uuid=procedure_uuid).count() == \
                self.task_set.filter(procedure_uuid=procedure_uuid).count()
 
+    def get_last_completed_task(self, procedure_uuid=None):
+        """
+        Returns last completed task
+        """
+        return self.task_set.filter(completed=True, procedure_uuid=procedure_uuid).order_by('-completed_date').first()
+
 
 class Task(models.Model):
     title = models.CharField(max_length=140, verbose_name=_('title'))
