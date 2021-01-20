@@ -77,6 +77,8 @@ def list_detail(request, list_id=None, list_slug=None, view_completed=False) -> 
 
             messages.success(request, 'New task "{t}" has been added.'.format(t=new_task.title))
             return redirect(request.path)
+        else:
+            pass
     else:
         # Don't allow adding new tasks on some views
         if list_slug not in ["mine", "recent-add", "recent-complete"]:

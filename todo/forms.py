@@ -50,7 +50,7 @@ class AddEditTaskForm(ModelForm):
             "class": "custom-select mb-3",
             "name": "assigned_to",
         }
-        self.fields["assigned_to"].value = assigned_to # pai
+        self.fields["assigned_to"].value = assigned_to  # pai
         self.fields["task_list"].value = task_list.id
 
     due_date = forms.DateTimeField(widget=forms.DateInput(attrs={"type": "date"}), required=False)

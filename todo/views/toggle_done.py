@@ -38,13 +38,15 @@ def toggle_done(request, task_id: int) -> HttpResponse:
         else:
             messages.error(request, _("Can not change completion status for ") + '"' + task.title + '".')
 
-        redir_url = reverse(
+        _redir_url = reverse(
             "todo:list_detail",
-            kwargs={"list_id": task.task_list.id, "list_slug": task.task_list.slug},
-        )
+            kwargs={"list_id": task.task_list.id, "list_slug": task.task_list.slug})
 
         if toggled:
-            redir_url = request.GET.get('next', redir_url)
+            redir_url = request.GET.get('next', _redir_url)
+        else:
+            redir_url = reverse("todo:task_detail",
+                                args=(task.pk,))
 
         return redirect(redir_url)
 

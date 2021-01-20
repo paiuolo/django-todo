@@ -40,10 +40,10 @@ class TaskListAdmin(admin.ModelAdmin):
 
 
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ("title", "created_by", "created_date", "task_list", "completed", "priority", "due_date", "is_active", "assigned_to")
+    list_display = ("title", "created_by", "created_date", "task_list", "completed", "priority", "due_date", "is_active", "assigned_to", "procedure_uuid")
     list_filter = ("task_list",)
     ordering = ("priority",)
-    search_fields = ("title",)
+    search_fields = ("title", "procedure_uuid")
     actions = [export_to_csv]
 
 
