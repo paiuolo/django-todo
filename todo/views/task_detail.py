@@ -15,8 +15,8 @@ from todo.forms import AddEditTaskForm
 from todo.models import Comment, Task
 from todo.utils import (
     send_email_to_thread_participants,
-    # staff_check,
-    toggle_task_completed,
+    staff_check,
+    # toggle_task_completed,
     user_can_read_task,
 )
 
@@ -90,7 +90,11 @@ def task_detail(request, task_id: int) -> HttpResponse:
     handle_add_comment(request, task)
 
     # Save task edits
-    if request.POST.getlist("add_edit_task"):  # pai
+    # staff can edit task, non staff can only if creator
+    if (task.procedure_uuid is None and staff_check(request.user) or
+            (task.procedure_uuid is None and task.created_by == request.user)) \
+       and request.POST.getlist("add_edit_task"):  # pai
+
         form = AddEditTaskForm(
             request.user, request.POST, instance=task, initial={"task_list": task.task_list}
         )
@@ -107,6 +111,8 @@ def task_detail(request, task_id: int) -> HttpResponse:
     else:
         form = AddEditTaskForm(request.user, instance=task, initial={"task_list": task.task_list})
 
+    """
+    # pai (why duplicate toggle_done view?)
     # Mark complete
     if request.POST.get("toggle_done"):
         results_changed = toggle_task_completed(task.id, user=request.user)
@@ -116,6 +122,7 @@ def task_detail(request, task_id: int) -> HttpResponse:
             messages.error(request, _("Can not change completion status for ") + '"' + task.title + '".')
 
         return redirect("todo:task_detail", task_id=task.id)
+    """
 
     if task.due_date:
         thedate = task.due_date

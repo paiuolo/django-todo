@@ -10,7 +10,7 @@ from django.core.paginator import Paginator
 
 from todo.forms import AddEditTaskForm
 from todo.models import Task, TaskList
-from todo.utils import send_notify_mail, staff_check, get_user_tasks
+from todo.utils import send_notify_mail, staff_check, get_user_task_list_tasks
 
 
 @login_required
@@ -42,7 +42,7 @@ def list_detail(request, list_id=None, list_slug=None, view_completed=False) -> 
             # Show a specific list, ensuring permissions.
             task_list = get_object_or_404(TaskList, id=list_id, group__in=request.user.groups.all())
 
-            tasks = get_user_tasks(task_list, request.user)
+            tasks = get_user_task_list_tasks(task_list, request.user)
 
     # Additional filtering
     if view_completed:

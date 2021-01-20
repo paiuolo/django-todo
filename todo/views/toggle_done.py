@@ -25,28 +25,32 @@ def toggle_done(request, task_id: int) -> HttpResponse:
         if not user_can_toggle_task_done(request.user, task):
             raise PermissionDenied
 
+        _redir_url = reverse("todo:list_detail", kwargs={"list_id": task.task_list.id,
+                                                         "list_slug": task.task_list.slug})
+
         # prevent toggle for specific actions
         if (request.GET.get('done', False) and task.completed) or \
            (request.GET.get('not_done', False) and not task.completed):
-            # task has changed completion status
-            toggled = False
-        else:
-            toggled = toggle_task_completed(task.id, user=request.user)
-
-        if toggled:
-            messages.success(request, _("Task completion status changed for ") + '"' + task.title + '".')
-        else:
+            # task has changed completion status while user was looking at page
             messages.error(request, _("Can not change completion status for ") + '"' + task.title + '".')
 
-        _redir_url = reverse(
-            "todo:list_detail",
-            kwargs={"list_id": task.task_list.id, "list_slug": task.task_list.slug})
+            redir_url = _redir_url
 
-        if toggled:
-            redir_url = request.GET.get('next', _redir_url)
         else:
-            redir_url = reverse("todo:task_detail",
-                                args=(task.pk,))
+            try:
+                toggle_task_completed(task.id, user=request.user)
+
+            except Exception as e:
+                messages.error(request,
+                               _("Can not change completion status.") + ' ' + str(e))
+
+                # redirect to task detail
+                redir_url = reverse("todo:task_detail",
+                                    args=(task.pk,))
+            else:
+                messages.success(request, _("Task completion status changed for ") + '"' + task.title + '".')
+
+                redir_url = request.GET.get('next', _redir_url)
 
         return redirect(redir_url)
 

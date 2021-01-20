@@ -1,12 +1,13 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required  # , user_passes_test
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _  # pai
 
 from todo.models import Task
-from todo.utils import staff_check
+from todo.utils import staff_check, user_can_delete_task
 
 
 @login_required
@@ -19,29 +20,27 @@ def delete_task(request, task_id: int) -> HttpResponse:
     if request.method == "POST":
         task = get_object_or_404(Task, pk=task_id)
 
-        # pai
-        if not staff_check(request.user):
-            if task.created_by != request.user:
-                raise PermissionDenied
-
-        redir_url = reverse(
-            "todo:list_detail",
-            kwargs={"list_id": task.task_list.id, "list_slug": task.task_list.slug},
-        )
-
         # Permissions
-        if not (
-            (task.created_by == request.user)
-            or (request.user.is_superuser)
-            or staff_check(request.user)  # pai
-            # or (task.assigned_to == request.user)  # pai
-            # or (task.task_list.group in request.user.groups.all())  # pai
-        ):
-            raise PermissionDenied
+        if not user_can_delete_task(request.user, task):
+            # raise PermissionDenied  # pai
+            messages.error(request, _("Can not delete task '{}'.").format(task.title))
 
-        task.delete()
+            redir_url = reverse(
+                "todo:task_detail",
+                args=(task.pk,),
+            )
 
-        messages.success(request, "Task '{}' has been deleted".format(task.title))
+        else:
+            # can delete
+            task.delete()
+
+            messages.success(request, _("Task '{}' has been deleted.").format(task.title))
+
+            redir_url = reverse(
+                "todo:list_detail",
+                kwargs={"list_id": task.task_list.id, "list_slug": task.task_list.slug},
+            )
+
         return redirect(redir_url)
 
     else:

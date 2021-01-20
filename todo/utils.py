@@ -9,7 +9,8 @@ from django.core import mail
 from django.template.loader import render_to_string
 from django.utils import timezone  # pai
 from django.db.models import Q  # pai
-from django.db import transaction # pai
+from django.db import transaction  # pai
+from django.utils.translation import gettext_lazy as _  # pai
 
 from todo.defaults import defaults
 from todo.models import Attachment, Comment, Task
@@ -217,11 +218,13 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
                     .count()
                 if previous_incomplete_tasks_count > 0:
                     log.info('Must complete {} previous tasks'.format(previous_incomplete_tasks_count))
-                    return False
+                    raise Exception(_('Must complete previous tasks.'))
+                    # return False
                 else:
                     if not check_previous_task_list_complete(task.task_list, task.procedure_uuid):
-                        log.info('Must complete previous tasks_lists')
-                        return False
+                        log.info(_('Must complete previous task lists.'))
+                        # return False
+                        raise Exception(_('Must complete previous task lists.'))
 
         # toggle value
         task.completed = not task.completed
@@ -239,7 +242,8 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
 
     except Task.DoesNotExist:
         log.info(f"Task {task_id} not found.")
-        return False
+        # return False
+        raise Exception(_('Not found.'))
 
 
 def remove_attachment_file(attachment_id: int) -> bool:
@@ -262,12 +266,12 @@ def remove_attachment_file(attachment_id: int) -> bool:
 @transaction.atomic
 def add_attachment_file(request, file_data, task):
     if file_data.size > defaults("TODO_MAXIMUM_ATTACHMENT_SIZE"):
-        raise Exception("File exceeds maximum attachment size.")
+        raise Exception(_("File exceeds maximum attachment size."))
 
     name, extension = os.path.splitext(file_data.name)
 
     if extension not in defaults("TODO_LIMIT_FILE_ATTACHMENTS"):
-        raise Exception("This site does not allow upload of '{}' files.".format(extension))
+        raise Exception(_("This site does not allow upload of '{}' files.").format(extension))
 
     user = request.user  # !!
 
@@ -309,8 +313,8 @@ def add_attachment_file(request, file_data, task):
     created_attachment.save()
 
 
-def get_user_tasks(task_list, user, completed=None):
-    lists = task_list.task_set\
+def get_user_task_list_tasks(task_list, user, completed=None):
+    tasks = task_list.task_set\
         .filter(is_active=True)\
         .filter(Q(created_by=user) |
                 Q(assigned_to=user) |
@@ -318,9 +322,24 @@ def get_user_tasks(task_list, user, completed=None):
         .prefetch_related('created_by', 'assigned_to')
 
     if completed is not None:
-        lists = lists.filter(completed=completed)
+        tasks = tasks.filter(completed=completed)
 
-    return lists
+    return tasks
+
+
+def get_task_list_tasks(task_list, user=None, completed=None):
+    if user is not None:
+        if staff_check(user):
+            tasks = task_list.task_set.all()
+        else:
+            tasks = get_user_task_list_tasks(task_list, user)
+    else:
+        tasks = task_list.task_set.all()
+
+    if completed is not None:
+        tasks = tasks.filter(completed=completed)
+
+    return tasks
 
 
 def user_can_toggle_task_done(user, task):
@@ -341,3 +360,12 @@ def user_can_view_task_list(user, task_list):
         return True
     else:
         return task_list.group in user.groups.all()
+
+
+def user_can_delete_task(user, task):
+    if staff_check(user):
+        return True
+    else:
+        # task has no procedure and has been created by user
+        return task.procedure_uuid is None and \
+               task.created_by == user

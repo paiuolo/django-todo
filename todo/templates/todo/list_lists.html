@@ -1,5 +1,5 @@
 {% extends "todo/base.html" %}
-{% load todo_user_tasks %}
+{% load todo_get_user_task_list_tasks %}
 
 {% block title %}{{ list_title }} Todo Lists{% endblock %}
 
@@ -12,12 +12,12 @@
   {% for group in section_list %}
     <h3>Group: {{ group.grouper }}</h3>
     <ul class="list-group mb-4">
-      {% for task in group.list %}
-        {% todo_user_tasks task request.user as all_tasks %}
+      {% for task_list in group.list %}
+        {% todo_get_user_task_list_tasks task_list request.user as all_tasks %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
-          <a href="{% url 'todo:list_detail' task.id task.slug %}">{{ task.name }}</a>
+          <a href="{% url 'todo:list_detail' task_list.id task.slug %}">{{ task.name }}</a>
           {% comment %} #pai {% endcomment %}
-          {% comment %}<span class="badge badge-primary badge-pill">{{ task.task_set.count }}</span>{% endcomment %}
+          {% comment %}<span class="badge badge-primary badge-pill">{{ task_list.task_set.count }}</span>{% endcomment %}
           <span class="badge badge-primary badge-pill">{{ all_tasks.count }}</span>
         </li>
       {% endfor %}
