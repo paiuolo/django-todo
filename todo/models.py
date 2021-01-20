@@ -131,7 +131,6 @@ class TaskList(models.Model):
                self.task_set.filter(procedure_uuid=procedure_uuid).count()
 
 
-
 class Task(models.Model):
     title = models.CharField(max_length=140, verbose_name=_('title'))
     task_list = models.ForeignKey(TaskList, verbose_name=_('task list'), on_delete=models.CASCADE, null=True)

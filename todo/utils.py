@@ -166,13 +166,13 @@ def send_email_to_thread_participants(task, msg_body, user, subject=None):
     todo_send_mail(user, task, email_subject, email_body, recip_list)
 
 
-def check_previous_task_list_complete(task_list, procedure_uuid=None):
+def check_previous_task_lists_completeness(task_list, procedure_uuid=None):
     """
     Checks previous task list completion status
     """
     if task_list is not None and task_list.previous_task_list is not None:
-        return task_list.all_tasks_completed(procedure_uuid) and \
-               check_previous_task_list_complete(task_list.previous_task_list, procedure_uuid)
+        return task_list.previous_task_list.all_tasks_completed(procedure_uuid) and \
+               check_previous_task_lists_completeness(task_list.previous_task_list, procedure_uuid=procedure_uuid)
     else:
         return True
 
@@ -221,7 +221,7 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
                     raise Exception(_('Must complete previous tasks.'))
                     # return False
                 else:
-                    if not check_previous_task_list_complete(task.task_list, task.procedure_uuid):
+                    if not check_previous_task_lists_completeness(task.task_list, task.procedure_uuid):
                         log.info(_('Must complete previous task lists.'))
                         # return False
                         raise Exception(_('Must complete previous task lists.'))
