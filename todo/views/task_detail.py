@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required  # , user_passes_test
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse  # , Http404  # pai
+from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _  # pai
@@ -56,7 +56,8 @@ def task_detail(request, task_id: int) -> HttpResponse:
     # Ensure user has permission to view task. Superusers can view all tasks.
     # Get the group this task belongs to, and check whether current user is a member of that group.
     if not user_can_read_task(task, request.user):
-        raise PermissionDenied
+        # raise PermissionDenied  # pai
+        raise Http404
 
     comment_list = Comment.objects.filter(task=task_id).order_by("-date")  # pai
 

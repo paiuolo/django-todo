@@ -24,7 +24,11 @@ def toggle_done(request, task_id: int) -> HttpResponse:
         # Permissions
         # pai
         if not user_can_toggle_task_done(request.user, task):
-            raise PermissionDenied
+            # raise PermissionDenied
+            messages.error(request, _("Can not change completion status for ") + '"' + task.title + '".')
+
+            return redirect(reverse("todo:task_detail",
+                                    args=(task.pk,)))
 
         _redir_url = reverse("todo:list_detail", kwargs={"list_id": task.task_list.id,
                                                          "list_slug": task.task_list.slug})
