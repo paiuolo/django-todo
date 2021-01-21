@@ -5,6 +5,7 @@ from django.db import IntegrityError
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _  # pai
 
 from todo.forms import AddTaskListForm
 from todo.utils import staff_check
@@ -17,25 +18,25 @@ def add_list(request) -> HttpResponse:
     """
 
     # Only staffers can add lists, regardless of TODO_STAFF_USER setting.
-    if not staff_check(request.user):
-        raise PermissionDenied
+    if staff_check(request.user):
+        if request.POST:
+            form = AddTaskListForm(request.user, request.POST)
+            if form.is_valid():
+                try:
+                    newlist = form.save(commit=False)
+                    newlist.slug = slugify(newlist.name, allow_unicode=True)
+                    newlist.save()
+                    messages.success(request, _("A new list has been added."))
+                    return redirect("todo:lists")
 
-    if request.POST:
-        form = AddTaskListForm(request.user, request.POST)
-        if form.is_valid():
-            try:
-                newlist = form.save(commit=False)
-                newlist.slug = slugify(newlist.name, allow_unicode=True)
-                newlist.save()
-                messages.success(request, "A new list has been added.")
-                return redirect("todo:lists")
-
-            except IntegrityError:
-                messages.warning(
-                    request,
-                    "There was a problem saving the new list. "
-                    "Most likely a list with the same name in the same group already exists.",
-                )
+                except IntegrityError:
+                    messages.warning(
+                        request,
+                        _("There was a problem saving the new list. "
+                          "Most likely a list with the same name in the same group already exists."),
+                    )
+        else:
+            form = AddTaskListForm(request.user)
     else:
         # pai
         """
@@ -45,6 +46,10 @@ def add_list(request) -> HttpResponse:
         else:
             form = AddTaskListForm(request.user)
         """
+        messages.error(
+            request,
+            _("Only staff users can add tasks lists.")
+        )
         form = AddTaskListForm(request.user)
 
     context = {"form": form}

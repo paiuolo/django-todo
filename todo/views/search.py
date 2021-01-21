@@ -14,17 +14,17 @@ def search(request) -> HttpResponse:
     """Search for tasks user has permission to see.
     """
 
-    query_string = ""
+    query_string = ''
 
     if request.POST:
         form = SearchForm(request.POST)
 
         if form.is_valid():
-            query_string = form.cleaned_data.get('q', '')
+            query_string = form.cleaned_data.get('q', '').strip()
 
     else:
-        if ("q" in request.GET) and request.GET["q"].strip():
-            query_string = request.GET["q"]
+        if "q" in request.GET:
+            query_string = request.GET["q"].strip()
 
         initial = {'q': query_string}
         form = SearchForm(initial=initial)
@@ -32,16 +32,9 @@ def search(request) -> HttpResponse:
     context = {"form": form}
 
     if query_string != '':
-        if ("q" in request.GET) and request.GET["q"].strip():
-            query_string = request.GET["q"]
-
-            found_tasks = Task.objects.filter(is_active=True).filter(
-                Q(title__icontains=query_string) | Q(note__icontains=query_string)
-            )
-        else:
-            # What if they selected the "completed" toggle but didn't enter a query string?
-            # We still need found_tasks in a queryset so it can be "excluded" below.
-            found_tasks = Task.objects.filter(is_active=True)
+        found_tasks = Task.objects.filter(is_active=True).filter(
+            Q(title__icontains=query_string) | Q(note__icontains=query_string)
+        )
 
     else:
         found_tasks = None
@@ -54,7 +47,10 @@ def search(request) -> HttpResponse:
             found_tasks = found_tasks.exclude(completed=True)
 
         if not staff_check(request.user):  # pai
-            found_tasks = found_tasks.filter(task_list__group__in=request.user.groups.all())
+            found_tasks = found_tasks.filter(Q(created_by=request.user) |
+                                             Q(assigned_to=request.user) |
+                                             Q(assigned_to__isnull=True,
+                                               task_list__group__in=request.user.groups.all()))
 
     context["query_string"] = query_string
     context["found_tasks"] = found_tasks

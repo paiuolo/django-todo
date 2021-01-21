@@ -35,6 +35,17 @@ def todo_setup(django_user_model):
     )
     extra_g2_user.groups.add(g2)
 
+    # pai (non staff user)
+    gx = Group.objects.create(name="Workgroup Three")
+    ux = django_user_model.objects.create_user(
+        username="ux", password="password", email="ux@example.com", is_staff=False
+    )
+    ux.groups.add(gx)
+    tlistx = TaskList.objects.create(group=gx, name="Zep", slug="zep")
+    Task.objects.create(created_by=ux, title="Task 1", task_list=tlistx, priority=1)
+    Task.objects.create(created_by=ux, title="Task 2", task_list=tlistx, priority=2, completed=True)
+    Task.objects.create(created_by=ux, title="Task 3", task_list=tlistx, priority=3)
+
 
 @pytest.fixture()
 # Set up an in-memory mail server to receive test emails

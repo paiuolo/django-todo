@@ -29,14 +29,14 @@ def import_setup(todo_setup):
 @pytest.mark.django_db
 def test_setup(todo_setup):
     """Confirm what we should have from conftest, prior to importing CSV."""
-    assert TaskList.objects.all().count() == 2
-    assert Task.objects.all().count() == 6
+    assert TaskList.objects.all().count() == 3  # pai
+    assert Task.objects.all().count() == 9  # pai
 
 
 @pytest.mark.django_db
 def test_import(import_setup):
     """Confirm that importing the CSV gave us two more rows (one should have been skipped)"""
-    assert Task.objects.all().count() == 8  # 2 out of 3 rows should have imported; one was an error
+    assert Task.objects.all().count() == 11  # pai  # 2 out of 3 rows should have imported; one was an error
 
 
 @pytest.mark.django_db
@@ -57,10 +57,10 @@ def test_report(import_setup):
     )
 
     assert (
-        'Upserted task 7: "Make dinner" in list "Zip" (group "Workgroup One")' in results["upserts"]
+        'Upserted task 10: "Make dinner" in list "Zip" (group "Workgroup One")' in results["upserts"]  # pai
     )
     assert (
-        'Upserted task 8: "Bake bread" in list "Zip" (group "Workgroup One")' in results["upserts"]
+        'Upserted task 11: "Bake bread" in list "Zip" (group "Workgroup One")' in results["upserts"]  # pai
     )
 
 

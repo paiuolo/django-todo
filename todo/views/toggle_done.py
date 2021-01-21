@@ -5,6 +5,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _  # pai
+from django.http import HttpResponseNotAllowed
 
 from todo.models import Task
 from todo.utils import toggle_task_completed
@@ -55,4 +56,4 @@ def toggle_done(request, task_id: int) -> HttpResponse:
         return redirect(redir_url)
 
     else:
-        raise PermissionDenied
+        return HttpResponseNotAllowed(permitted_methods=('post', 'options'))

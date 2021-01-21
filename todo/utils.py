@@ -46,11 +46,11 @@ else:
 def user_can_read_task(task, user):
     # return task.task_list.group in user.groups.all() or user.is_superuser
     # pai
-    if not staff_check(user):
-        return task.created_by == user or task.assigned_to == user or (task.assigned_to == None and
+    if staff_check(user):
+        return True
+    else:
+        return task.created_by == user or task.assigned_to == user or (task.assigned_to is None and
                                                                        task.task_list.group in user.groups.all())
-
-    return task.task_list.group in user.groups.all() or user.is_superuser
 
 
 def todo_get_backend(task):
