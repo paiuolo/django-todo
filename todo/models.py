@@ -78,7 +78,7 @@ class LockedAtomicTransaction(Atomic):
 
 
 class TaskList(models.Model):
-    name = models.CharField(max_length=60, verbose_name=_('name'))
+    name = models.CharField(max_length=255, verbose_name=_('name'))  # pai
     slug = models.SlugField(default="", verbose_name=_('slug'), max_length=255)
     group = models.ForeignKey(Group, verbose_name=_('group'), on_delete=models.CASCADE)
 
