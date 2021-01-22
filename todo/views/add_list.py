@@ -40,9 +40,9 @@ def add_list(request) -> HttpResponse:
     else:
         # pai
         """
-        if request.user.groups.all().count() == 1:
+        if get_user_groups(request.user).count() == 1:
             # FIXME: Assuming first of user's groups here; better to prompt for group
-            form = AddTaskListForm(request.user, initial={"group": request.user.groups.all()[0]})
+            form = AddTaskListForm(request.user, initial={"group": get_user_groups(request.user)[0]})
         else:
             form = AddTaskListForm(request.user)
         """

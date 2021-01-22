@@ -19,7 +19,7 @@ class AddTaskListForm(ModelForm):
         if staff_check(user):
             self.fields["group"].queryset = Group.objects.all()
         else:
-            self.fields["group"].queryset = user.groups.all()
+            self.fields["group"].queryset = get_user_groups(request.user)
         self.fields["group"].widget.attrs = {
             "id": "id_group",
             "class": "custom-select mb-3",

@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 
 from todo.models import Attachment
-from todo.utils import remove_attachment_file, staff_check
+from todo.utils import remove_attachment_file, staff_check, get_user_groups
 
 
 @login_required
@@ -25,7 +25,7 @@ def remove_attachment(request, attachment_id: int) -> HttpResponse:
 
         # Permissions
         if not (
-            attachment.task.task_list.group in request.user.groups.all()
+            attachment.task.task_list.group in get_user_groups(request.user)
             or request.user.is_superuser
         ):
             raise PermissionDenied

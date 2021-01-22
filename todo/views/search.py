@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.core.paginator import Paginator  # pai
 
 from todo.models import Task
-from todo.utils import staff_check
+from todo.utils import staff_check, get_user_groups
 from todo.forms import SearchForm
 
 
@@ -47,7 +47,7 @@ def search(request) -> HttpResponse:
             found_tasks = found_tasks.filter(Q(created_by=request.user) |
                                              Q(assigned_to=request.user) |
                                              Q(assigned_to__isnull=True,
-                                               task_list__group__in=request.user.groups.all()))
+                                               task_list__group__in=get_user_groups(request.user)))
 
     # Pagination
     paginator = Paginator(found_tasks if found_tasks is not None else [], 10)

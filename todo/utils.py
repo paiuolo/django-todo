@@ -19,38 +19,57 @@ from filer.models import File as FilerFile, Folder as FilerFolder  # pai
 
 log = logging.getLogger(__name__)
 
-if 'django_sso_app' in settings.INSTALLED_APPS:
-    from django_sso_app.core.permissions import is_staff
 
-    def staff_check(user):
-        if defaults("TODO_STAFF_ONLY"):
-            return is_staff(user)
-        else:
-            # If unset or False, allow all logged in users
-            return True
+# pai
+def import_from(import_string):
+    """
+    Imports a function from python module import string
+    """
+    fn_name = import_string.split('.')[-1]
+    module_name = '.'.join(import_string.split('.')[:-1])
+    module = __import__(module_name, fromlist=[fn_name])
+    return getattr(module, fn_name)
 
+
+def _staff_check(user):
+    """If TODO_STAFF_ONLY is set to True, limit view access to staff users only.
+        # FIXME: More granular access control needed - see
+        https://github.com/shacker/django-todo/issues/50
+    """
+
+    if defaults("TODO_STAFF_ONLY"):
+        return user.is_staff
+    else:
+        # If unset or False, allow all logged in users
+        return True
+
+
+_staff_check_function = getattr(settings, 'TODO_STAFF_CHECK_FUNCTION', None)
+if _staff_check_function is None:
+    staff_check = _staff_check
 else:
-    def staff_check(user):
-        """If TODO_STAFF_ONLY is set to True, limit view access to staff users only.
-            # FIXME: More granular access control needed - see
-            https://github.com/shacker/django-todo/issues/50
-        """
+    staff_check = import_from(_staff_check_function)
 
-        if defaults("TODO_STAFF_ONLY"):
-            return user.is_staff
-        else:
-            # If unset or False, allow all logged in users
-            return True
+
+def _get_user_groups(user):
+    return user.groups.all()
+
+
+_get_user_groups_function = getattr(settings, 'TODO_USER_GROUPS_FUNCTION', None)
+if _get_user_groups_function is None:
+    get_user_groups = _get_user_groups
+else:
+    get_user_groups = import_from(_get_user_groups_function)
 
 
 def user_can_read_task(task, user):
-    # return task.task_list.group in user.groups.all() or user.is_superuser
+    # return task.task_list.group in get_user_groups(user) or user.is_superuser
     # pai
     if staff_check(user):
         return True
     else:
         return task.created_by == user or task.assigned_to == user or (task.assigned_to is None and
-                                                                       task.task_list.group in user.groups.all())
+                                                                       task.task_list.group in get_user_groups(user))
 
 
 def todo_get_backend(task):
@@ -318,7 +337,7 @@ def get_user_task_list_tasks(task_list, user, completed=None):
         .filter(is_active=True)\
         .filter(Q(created_by=user) |
                 Q(assigned_to=user) |
-                Q(assigned_to__isnull=True, task_list__group__in=user.groups.all())) \
+                Q(assigned_to__isnull=True, task_list__group__in=get_user_groups(user))) \
         .prefetch_related('created_by', 'assigned_to')
 
     if completed is not None:
@@ -347,7 +366,7 @@ def user_can_toggle_task_done(user, task):
         return True
     else:
         if task.assigned_to is None:
-            if task.task_list.group in user.groups.all():
+            if task.task_list.group in get_user_groups(user):
                 return True
             else:
                 return False
@@ -359,7 +378,7 @@ def user_can_view_task_list(user, task_list):
     if staff_check(user):
         return True
     else:
-        return task_list.group in user.groups.all()
+        return task_list.group in get_user_groups(user)
 
 
 def user_can_delete_task(user, task):

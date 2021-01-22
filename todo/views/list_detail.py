@@ -10,7 +10,7 @@ from django.core.paginator import Paginator
 
 from todo.forms import AddEditTaskForm
 from todo.models import Task, TaskList
-from todo.utils import send_notify_mail, staff_check, get_task_list_tasks
+from todo.utils import send_notify_mail, staff_check, get_task_list_tasks, get_user_groups
 
 
 @login_required
@@ -27,10 +27,10 @@ def list_detail(request, list_id=None, list_slug=None, view_completed=False) -> 
     if list_slug == "mine":
         tasks = Task.objects.filter(is_active=True).filter(Q(assigned_to=request.user) |
                                                            Q(assigned_to__isnull=True,
-                                                           task_list__group__in=request.user.groups.all()))
+                                                           task_list__group__in=get_user_groups(request.user)))
     else:
         # pai
-        #if task_list.group not in request.user.groups.all() and not request.user.is_superuser:
+        #if task_list.group not in get_user_groups(request.user) and not request.user.is_superuser:
         if staff_check(request.user):
             # Show a specific list, ensuring permissions.
             task_list = get_object_or_404(TaskList, id=list_id)
@@ -39,7 +39,7 @@ def list_detail(request, list_id=None, list_slug=None, view_completed=False) -> 
                                       .prefetch_related('created_by', 'assigned_to')
         else:
             # Show a specific list, ensuring permissions.
-            task_list = get_object_or_404(TaskList, id=list_id, group__in=request.user.groups.all())
+            task_list = get_object_or_404(TaskList, id=list_id, group__in=get_user_groups(request.user))
 
             tasks = get_task_list_tasks(task_list, request.user)
 

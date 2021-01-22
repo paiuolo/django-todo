@@ -27,7 +27,7 @@ class TaskListsApiView(ListModelMixin, GenericViewSet):
         if staff_check(user):
             return TaskList.objects.all()
         else:
-            return TaskList.objects.filter(group__in=user.groups.all())
+            return TaskList.objects.filter(group__in=get_user_groups(request.user))
 
     def list(self, request, *args, **kwargs):
         return super(TaskListsApiView, self).list(request, *args, **kwargs)
@@ -43,7 +43,7 @@ class TaskListDetailApiView(RetrieveModelMixin, GenericViewSet):
         if staff_check(user):
             return TaskList.objects.all()
         else:
-            return TaskList.objects.filter(group__in=user.groups.all())
+            return TaskList.objects.filter(group__in=get_user_groups(request.user))
 
     def retrieve(self, request, *args, **kwargs):
         return super(TaskListDetailApiView, self).retrieve(request, *args, **kwargs)

@@ -10,7 +10,7 @@ from django.core.paginator import Paginator  # pai
 
 from todo.forms import SearchForm
 from todo.models import Task, TaskList
-from todo.utils import staff_check
+from todo.utils import staff_check, get_user_groups
 
 
 @login_required
@@ -24,7 +24,7 @@ def list_lists(request) -> HttpResponse:
 
     # Make sure user belongs to at least one group.
     if not request.user.is_superuser:  # pai
-        if not request.user.groups.all().exists():
+        if not get_user_groups(request.user).exists():
             messages.warning(
                 request,
                 "You do not yet belong to any groups. Ask your administrator to add you to one.",
@@ -36,12 +36,12 @@ def list_lists(request) -> HttpResponse:
     if not staff_check(request.user):
         task_count = (
             Task.objects.filter(is_active=True).filter(completed=False)
-                .filter(task_list__group__in=request.user.groups.all()).filter(
+                .filter(task_list__group__in=get_user_groups(request.user)).filter(
                             Q(created_by=request.user) | Q(assigned_to=request.user))  # pai
                 .count()
         )
 
-        lists = lists.filter(group__in=request.user.groups.all())
+        lists = lists.filter(group__in=get_user_groups(request.user))
     else:
         task_count = (
             Task.objects.filter(is_active=True).filter(completed=False)

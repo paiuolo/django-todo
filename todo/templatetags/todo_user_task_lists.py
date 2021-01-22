@@ -11,4 +11,4 @@ def todo_user_task_lists(user):
     if staff_check(user):
         return TaskList.objects.filter(is_active=True)
     else:
-        return TaskList.objects.filter(is_active=True).filter(group__in=user.groups.all())
+        return TaskList.objects.filter(is_active=True).filter(group__in=get_user_groups(request.user))

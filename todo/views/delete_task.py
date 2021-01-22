@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _  # pai
 
 from todo.models import Task
-from todo.utils import staff_check, user_can_delete_task
+from todo.utils import user_can_delete_task
 
 
 @login_required
