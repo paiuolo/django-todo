@@ -138,7 +138,7 @@ class TaskList(models.Model):
 
 
 class Task(models.Model):
-    title = models.CharField(max_length=140, verbose_name=_('title'))
+    title = models.CharField(max_length=255, verbose_name=_('title'))
     task_list = models.ForeignKey(TaskList, verbose_name=_('task list'), on_delete=models.CASCADE, null=True)
     created_date = models.DateTimeField(verbose_name=_('created date'), default=timezone.now, blank=True, null=True)  # pai
     due_date = models.DateTimeField(verbose_name=_('due date'), blank=True, null=True)  # pai
