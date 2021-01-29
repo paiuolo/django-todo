@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework.mixins import CreateModelMixin, ListModelMixin, RetrieveModelMixin
 
-from ..utils import staff_check
+from ..utils import staff_check, get_user_groups
 from ..models import Task, TaskList
 from .serializers import (TicketSerializer, TaskSerializer,
                           TaskListSerializer, TaskListDetailSerializer)
