@@ -94,6 +94,9 @@ class TaskSerializer(serializers.ModelSerializer, UrlObjectSerializer):
 
     attachments = serializers.SerializerMethodField(required=False)
 
+    mark_done = serializers.SerializerMethodField(required=False)
+    mark_pending = serializers.SerializerMethodField(required=False)
+
     class Meta:
         model = Task
         fields = ('title', 'note',
@@ -105,6 +108,7 @@ class TaskSerializer(serializers.ModelSerializer, UrlObjectSerializer):
                   'attachments',
                   'task_list',
                   'url',
+                  'mark_done', 'mark_pending'
                   )
 
     def get_created_by(self, instance):
@@ -138,6 +142,18 @@ class TaskSerializer(serializers.ModelSerializer, UrlObjectSerializer):
         request = self.context['request']
 
         return request.build_absolute_uri(instance.task_list.get_absolute_rest_url())
+
+    def get_mark_done(self, instance):
+        request = self.context['request']
+
+        return request.build_absolute_uri(reverse('todo_api:task_mark_done',
+                                                  args=[instance.id]))
+
+    def get_mark_pending(self, instance):
+        request = self.context['request']
+
+        return request.build_absolute_uri(reverse('todo_api:task_mark_pending',
+                                                  args=[instance.id]))
 
 
 class PartialTaskSerializer(TaskSerializer, UrlObjectSerializer, PartialObjectSerializer):

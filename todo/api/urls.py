@@ -11,6 +11,11 @@ _api_urlpatterns = [
     url(r'^list/$', TaskListsApiView.as_view({'get': 'list'}), name='lists'),
     url(r'^list/(?P<pk>\w+)/$', TaskListDetailApiView.as_view({'get': 'retrieve'}), name='list_detail'),
 
+    url(r'^task/(?P<pk>\d+)/mark-done/$', TaskDetailApiView.as_view({'post': 'mark_done'}),
+        name='task_mark_done'),
+    url(r'^task/(?P<pk>\d+)/mark-pending/$', TaskDetailApiView.as_view({'post': 'mark_pending'}),
+        name='task_mark_pending'),
+
     url(r'^task/(?P<pk>\d+)/$', TaskDetailApiView.as_view({'get': 'retrieve'}), name='task_detail')
 ]
 
