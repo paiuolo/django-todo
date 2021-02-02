@@ -243,9 +243,9 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
                     # return False
                 else:
                     if not check_previous_task_lists_completeness(task.task_list, task.procedure_uuid):
-                        log.info(_('Must complete previous task lists.'))
+                        log.info('Must complete previous task lists.')
                         # return False
-                        raise Exception(_('Must complete previous task lists.'))
+                        raise Exception(_('Must complete previous tasks.'))
 
         # toggle value
         task.completed = not task.completed
