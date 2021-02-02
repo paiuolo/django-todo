@@ -67,7 +67,7 @@ class CSVImporter:
                 # newrow at this point is fully validated, and all FK relations exist,
                 # e.g. `newrow.get("Assigned To")`, is a Django User instance.
                 assignee = newrow.get("Assigned To") if newrow.get("Assigned To") else None
-                created_date = (
+                created_at = (
                     newrow.get("Created Date")
                     if newrow.get("Created Date")
                     else datetime.datetime.today()
@@ -82,7 +82,7 @@ class CSVImporter:
                     defaults={
                         "assigned_to": assignee,
                         "completed": newrow.get("Completed"),
-                        "created_date": created_date,
+                        "created_at": created_at,
                         "due_date": due_date,
                         "note": newrow.get("Note"),
                         "priority": priority,

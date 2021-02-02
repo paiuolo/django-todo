@@ -40,7 +40,7 @@
                 <a href="{% url 'todo:task_detail' task.id %}">{{ task.title|truncatewords:10 }}</a>
             </td>
             <td>
-                {{ task.created_date|date:"m/d/Y" }}
+                {{ task.created_at|date:"m/d/Y" }}
             </td>
             <td>
               <span {% if task.overdue_status %}class="overdue"{% endif %}>

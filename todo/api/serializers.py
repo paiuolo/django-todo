@@ -14,7 +14,7 @@ from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.fields import Field
 
-from ..models import Task, TaskList, Comment
+from ..models import Task, TaskList, Comment, now
 from ..utils import add_attachment_file, staff_check
 
 User = get_user_model()
@@ -63,11 +63,11 @@ class Base64FileField(Field):
 
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
-    date = serializers.DateTimeField()
+    created_at = serializers.DateTimeField()
 
     class Meta:
         model = Comment
-        fields = ('author', 'date', 'body')
+        fields = ('author', 'created_at', 'body')
 
     def get_author(self, instance):
         if 'django_sso_app' in settings.INSTALLED_APPS:
@@ -82,7 +82,7 @@ class TaskSerializer(serializers.ModelSerializer, UrlObjectSerializer):
     created_by = serializers.SerializerMethodField()
     assigned_to = serializers.SerializerMethodField(required=False)
 
-    created_date = serializers.DateTimeField()
+    created_at = serializers.DateTimeField()
     due_date = serializers.DateTimeField(required=False)
 
     completed = serializers.BooleanField(required=False)
@@ -102,7 +102,7 @@ class TaskSerializer(serializers.ModelSerializer, UrlObjectSerializer):
         fields = ('title', 'note',
                   'created_by',
                   'assigned_to',
-                  'created_date', 'due_date',
+                  'created_at', 'due_date',
                   'completed', 'completed_date',
                   'comments',
                   'attachments',
@@ -112,20 +112,22 @@ class TaskSerializer(serializers.ModelSerializer, UrlObjectSerializer):
                   )
 
     def get_created_by(self, instance):
-        if 'django_sso_app' in settings.INSTALLED_APPS:
-            request = self.context['request']
-            return request.build_absolute_uri(reverse('django_sso_app_user:rest-detail',
-                                                      args=[instance.created_by.sso_id]))
-        else:
-            return instance.created_by.username
+        if instance.created_by is not None:
+            if 'django_sso_app' in settings.INSTALLED_APPS:
+                request = self.context['request']
+                return request.build_absolute_uri(reverse('django_sso_app_user:rest-detail',
+                                                          args=[instance.created_by.sso_id]))
+            else:
+                return instance.created_by.username
 
     def get_assigned_to(self, instance):
-        if 'django_sso_app' in settings.INSTALLED_APPS:
-            request = self.context['request']
-            return request.build_absolute_uri(reverse('django_sso_app_user:rest-detail',
-                                                      args=[instance.assigned_to.sso_id]))
-        else:
-            return instance.created_by.username
+        if instance.assigned_to is not None:
+            if 'django_sso_app' in settings.INSTALLED_APPS:
+                request = self.context['request']
+                return request.build_absolute_uri(reverse('django_sso_app_user:rest-detail',
+                                                          args=[instance.assigned_to.sso_id]))
+            else:
+                return instance.created_by.username
 
     def get_attachments(self, instance):
         request = self.context['request']
@@ -161,7 +163,7 @@ class PartialTaskSerializer(TaskSerializer, UrlObjectSerializer, PartialObjectSe
         fields = ('title',
                   'created_by',
                   'assigned_to',
-                  'created_date', 'due_date',
+                  'created_at', 'due_date',
                   'completed', 'completed_date',
                   'url',
                   '_partial')
@@ -181,7 +183,7 @@ class TicketSerializer(TaskSerializer, UrlObjectSerializer, PartialObjectSeriali
 
         validated_data['task_list'] = TaskList.objects.get(slug=settings.TODO_DEFAULT_LIST_SLUG)
         validated_data['created_by'] = request.user
-        validated_data['created_date'] = timezone.now()
+        validated_data['created_at'] = now()
         validated_data['assigned_to'] = User.objects.get(username=settings.TODO_DEFAULT_ASSIGNEE)
 
         attachment_file_data = validated_data.pop('attachment', None)

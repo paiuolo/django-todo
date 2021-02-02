@@ -40,7 +40,7 @@ class TaskListAdmin(admin.ModelAdmin):
 
 
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ("title", "created_by", "created_date", "task_list", "completed", "priority", "due_date", "is_active", "assigned_to", "procedure_uuid")
+    list_display = ("title", "created_by", "created_at", "task_list", "completed", "priority", "due_date", "is_active", "assigned_to", "procedure_uuid")
     list_filter = ("task_list",)
     ordering = ("priority",)
     search_fields = ("title", "procedure_uuid")
@@ -48,11 +48,11 @@ class TaskAdmin(admin.ModelAdmin):
 
 
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ("author", "date", "snippet")
+    list_display = ("author", "created_at", "snippet")
 
 
 class AttachmentAdmin(admin.ModelAdmin):
-    list_display = ("task", "added_by", "timestamp", "file")
+    list_display = ("task", "added_by", "created_at", "file")
     autocomplete_fields = ["added_by", "task"]
 
 

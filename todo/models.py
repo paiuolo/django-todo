@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 # import datetime  # pai
 import os
 import textwrap
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -16,6 +17,17 @@ from django.db import transaction  # pai
 from filer.fields.file import FilerFileField  # pai
 
 from .storage import custom_fs  # pai
+
+
+def now():
+    """
+    Returns an aware or naive datetime.datetime, depending on settings.USE_TZ.
+    """
+    if settings.USE_TZ:
+        # timeit shows that datetime.now(tz=utc) is 24% slower
+        return timezone.now()
+    else:
+        return datetime.now()
 
 
 def get_attachment_upload_dir(instance, filename):
@@ -87,6 +99,8 @@ class TaskList(models.Model):
     previous_task_list = models.ForeignKey('self', verbose_name=_('previous task list'),
                                            on_delete=models.SET_NULL, null=True, blank=True)  # pai
 
+    created_at = models.DateTimeField(verbose_name=_('created at'), default=now, editable=False)  # pai
+
     def __str__(self):
         ret = self.name
 
@@ -140,7 +154,7 @@ class TaskList(models.Model):
 class Task(models.Model):
     title = models.CharField(max_length=255, verbose_name=_('title'))
     task_list = models.ForeignKey(TaskList, verbose_name=_('task list'), on_delete=models.CASCADE, null=True)
-    created_date = models.DateTimeField(verbose_name=_('created date'), default=timezone.now, blank=True, null=True)  # pai
+    created_at = models.DateTimeField(verbose_name=_('created at'), default=now, editable=False)  # pai
     due_date = models.DateTimeField(verbose_name=_('due date'), blank=True, null=True)  # pai
     completed = models.BooleanField(verbose_name=_('completed'), default=False)
     completed_date = models.DateTimeField(verbose_name=_('completed date'), blank=True, null=True)  # pai
@@ -181,13 +195,13 @@ class Task(models.Model):
     # on_complete_notify = models ...
 
     class Meta:
-        ordering = ["procedure_uuid", "priority", "created_date"]
+        ordering = ["procedure_uuid", "priority", "created_at"]
 
     # Has due date for an instance of this object passed?
     def overdue_status(self):
         "Returns whether the Tasks's due date has passed or not."
         #if self.due_date and datetime.date.today() > self.due_date:  # pai
-        if self.due_date and timezone.now() > self.due_date:  # pai
+        if self.due_date and now() > self.due_date:  # pai
             return True
 
     def __str__(self):
@@ -208,7 +222,7 @@ class Task(models.Model):
     def save(self, **kwargs):
         # If Task is being marked complete, set the completed_date
         if self.completed:
-            self.completed_date = timezone.now()
+            self.completed_date = now()
         super(Task, self).save()
 
     def merge_into(self, merge_target):
@@ -233,7 +247,7 @@ class Comment(models.Model):
         settings.AUTH_USER_MODEL, verbose_name=_('author'), on_delete=models.CASCADE, blank=True, null=True
     )
     task = models.ForeignKey(Task, verbose_name=_('task'), on_delete=models.CASCADE)
-    date = models.DateTimeField(verbose_name=_('date'), default=timezone.now)
+    created_at = models.DateTimeField(verbose_name=_('date'), default=now, editable=False)  # pai
     email_from = models.CharField(verbose_name=_('email from'), max_length=320, blank=True, null=True)
     email_message_id = models.CharField(verbose_name=_('email message id'), max_length=255, blank=True, null=True)
 
@@ -268,7 +282,7 @@ class Attachment(models.Model):
 
     task = models.ForeignKey(Task, verbose_name=_('task'), on_delete=models.CASCADE)
     added_by = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_('added by'), on_delete=models.CASCADE)
-    timestamp = models.DateTimeField(verbose_name=_('timestamp'), default=timezone.now)
+    created_at = models.DateTimeField(verbose_name=_('date'), default=now, editable=False)  # pai
     # pai
     # file = models.FileField(upload_to=get_attachment_upload_dir, max_length=255)
     file = models.FileField(storage=custom_fs,

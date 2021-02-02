@@ -128,7 +128,7 @@ class TaskFactory(factory.django.DjangoModelFactory):
     created_by = factory.LazyAttribute(
         lambda o: get_user_model().objects.get(username="staffer")
     )  # Randomized in post
-    created_date = factory.Faker("date_this_year")
+    created_at = factory.Faker("date_this_year")
 
     @factory.post_generation
     def add_details(self, build, extracted, **kwargs):

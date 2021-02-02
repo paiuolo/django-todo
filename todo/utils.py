@@ -165,9 +165,11 @@ def send_email_to_thread_participants(task, msg_body, user, subject=None):
     """Notify all previous commentors on a Task about a new comment."""
 
     current_site = Site.objects.get_current()
-    email_subject = subject
+
     if not subject:
         subject = render_to_string("todo/email/assigned_subject.txt", {"task": task})
+
+    email_subject = subject  # pai
 
     email_body = render_to_string(
         "todo/email/newcomment_body.txt",
@@ -300,7 +302,7 @@ def add_attachment_file(request, file_data, task):
         user_id = user.username
 
     created_attachment = Attachment.objects.create(
-        task=task, added_by=user, timestamp=timezone.now(), file=file_data
+        task=task, added_by=user, created_at=timezone.now(), file=file_data
     )
 
     created_attachment_task = created_attachment.task

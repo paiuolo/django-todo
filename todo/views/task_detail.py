@@ -59,7 +59,7 @@ def task_detail(request, task_id: int) -> HttpResponse:
         # raise PermissionDenied  # pai
         raise Http404
 
-    comment_list = Comment.objects.filter(task=task_id).order_by("-date")  # pai
+    comment_list = Comment.objects.filter(task=task_id).order_by("-created_at")  # pai
 
     # Handle task merging
     if not HAS_TASK_MERGE:
