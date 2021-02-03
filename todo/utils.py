@@ -62,7 +62,10 @@ else:
     get_user_groups = import_from(_get_user_groups_function)
 
 
-def user_can_read_task(task, user):
+def _user_can_read_task(task, user):
+    """
+    Staff, creator, assignee or same group users
+    """
     # return task.task_list.group in get_user_groups(user) or user.is_superuser
     # pai
     if staff_check(user):
@@ -70,6 +73,13 @@ def user_can_read_task(task, user):
     else:
         return task.created_by == user or task.assigned_to == user or (task.assigned_to is None and
                                                                        task.task_list.group in get_user_groups(user))
+
+
+_get_user_can_read_task_function = getattr(settings, 'TODO_USER_CAN_READ_TASK_FUNCTION', None)
+if _get_user_can_read_task_function is None:
+    user_can_read_task = _user_can_read_task
+else:
+    user_can_read_task = import_from(_get_user_can_read_task_function)
 
 
 def todo_get_backend(task):

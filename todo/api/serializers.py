@@ -128,6 +128,9 @@ class TaskSerializer(serializers.ModelSerializer, UrlObjectSerializer):
                                                           args=[instance.assigned_to.sso_id]))
             else:
                 return instance.created_by.username
+        else:
+            if instance.task_list is not None:
+                return instance.task_list.group.name
 
     def get_attachments(self, instance):
         request = self.context['request']
@@ -158,7 +161,7 @@ class TaskSerializer(serializers.ModelSerializer, UrlObjectSerializer):
                                                   args=[instance.id]))
 
 
-class PartialTaskSerializer(TaskSerializer, UrlObjectSerializer, PartialObjectSerializer):
+class PartialTaskSerializer(TaskSerializer, PartialObjectSerializer):
     class Meta(TaskSerializer.Meta):
         fields = ('title',
                   'created_by',
@@ -169,7 +172,7 @@ class PartialTaskSerializer(TaskSerializer, UrlObjectSerializer, PartialObjectSe
                   '_partial')
 
 
-class TicketSerializer(TaskSerializer, UrlObjectSerializer, PartialObjectSerializer):
+class TicketSerializer(TaskSerializer, PartialObjectSerializer):
     attachment = Base64FileField(required=False)
 
     class Meta(TaskSerializer.Meta):

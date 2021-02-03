@@ -155,6 +155,7 @@ class Task(models.Model):
     title = models.CharField(max_length=255, verbose_name=_('title'))
     task_list = models.ForeignKey(TaskList, verbose_name=_('task list'), on_delete=models.CASCADE, null=True)
     created_at = models.DateTimeField(verbose_name=_('created at'), default=now, editable=False)  # pai
+    updated_at = models.DateTimeField(verbose_name=_('updated at'), null=True, blank=True, editable=False)  # pai
     due_date = models.DateTimeField(verbose_name=_('due date'), blank=True, null=True)  # pai
     completed = models.BooleanField(verbose_name=_('completed'), default=False)
     completed_date = models.DateTimeField(verbose_name=_('completed date'), blank=True, null=True)  # pai
@@ -210,6 +211,11 @@ class Task(models.Model):
             ret += ' [inactive]'
 
         return ret
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            self.updated_at = now()
+        return super(Task, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
         return reverse("todo:task_detail", kwargs={"task_id": self.id})
