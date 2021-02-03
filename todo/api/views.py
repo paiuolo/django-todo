@@ -87,7 +87,7 @@ class TaskDetailApiView(ReadOnlyModelViewSet):
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
         else:
-            return redirect(task.get_absolute_rest_url(), permanent=False)
+            return redirect(task.get_relative_rest_url(), permanent=False)
 
     def mark_done(self, request, pk=None, *args, **kwargs):
         task = get_object_or_404(Task, pk=pk)

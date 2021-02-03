@@ -117,7 +117,7 @@ class TaskList(models.Model):
         unique_together = ("group", "slug")
 
     # pai
-    def get_absolute_rest_url(self):
+    def get_relative_rest_url(self):
         return reverse("todo_api:list_detail", args=[self.pk])
 
     # pai
@@ -217,11 +217,11 @@ class Task(models.Model):
             self.updated_at = now()
         return super(Task, self).save(*args, **kwargs)
 
-    def get_absolute_url(self):
+    def get_relative_url(self):
         return reverse("todo:task_detail", kwargs={"task_id": self.id})
 
     # pai
-    def get_absolute_rest_url(self):
+    def get_relative_rest_url(self):
         return reverse("todo_api:task_detail", args=[self.pk])
 
     # Auto-set the Task creation / completed date

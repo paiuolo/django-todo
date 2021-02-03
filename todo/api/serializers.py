@@ -33,7 +33,7 @@ class UrlObjectSerializer(serializers.Serializer):
     def get_url(self, instance):
         request = self.context['request']
 
-        return request.build_absolute_uri(instance.get_absolute_rest_url())
+        return request.build_absolute_uri(instance.get_relative_rest_url())
 
 
 class Base64FileField(Field):
@@ -146,7 +146,7 @@ class TaskSerializer(serializers.ModelSerializer, UrlObjectSerializer):
     def get_task_list(self, instance):
         request = self.context['request']
 
-        return request.build_absolute_uri(instance.task_list.get_absolute_rest_url())
+        return request.build_absolute_uri(instance.task_list.get_relative_rest_url())
 
     def get_mark_done(self, instance):
         request = self.context['request']
