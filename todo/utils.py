@@ -103,6 +103,7 @@ def todo_get_mailer(user, task):
 
     from_address = getattr(task_backend, "from_address")
     from_address = email.utils.formataddr((user.username, from_address))
+
     return (from_address, task_backend)
 
 
@@ -120,7 +121,8 @@ def todo_send_mail(user, task, subject, body, recip_list):
         "<notif-{task_id}."
         # the message hash / epoch pair enables deduplication
         "{message_hash:x}."
-        "{epoch}@django-todo>"
+        # "{epoch}@django-todo>"
+        + getattr(settings, 'TODO_MAIL_MESSAGE_ID', "{epoch}@django-todo>")  # pai
     ).format(
         task_id=task.pk,
         # avoid the -hexstring case (hashes can be negative)
@@ -131,7 +133,8 @@ def todo_send_mail(user, task, subject, body, recip_list):
     # the thread message id is used as a common denominator between all
     # notifications for some task. This message doesn't actually exist,
     # it's just there to make threading possible
-    thread_message_id = "<thread-{}@django-todo>".format(task.pk)
+    # thread_message_id = "<thread-{}@django-todo>".format(task.pk)
+    thread_message_id = getattr(settings, 'TODO_MAIL_THREAD_MESSAGE_ID', '<thread-{}@django-todo>').format(task.pk)  # pai
     references = "{} {}".format(references, thread_message_id)
 
     with backend() as connection:
@@ -152,7 +155,8 @@ def todo_send_mail(user, task, subject, body, recip_list):
         message.send()
 
 
-def send_notify_mail(new_task):
+# pai
+def _send_notify_mail(new_task):
     """
     Send email to assignee if task is assigned to someone other than submittor.
     Unassigned tasks should not try to notify.
@@ -171,7 +175,15 @@ def send_notify_mail(new_task):
     todo_send_mail(new_task.created_by, new_task, subject, body, recip_list)
 
 
-def send_email_to_thread_participants(task, msg_body, user, subject=None):
+_send_notify_mail_function = getattr(settings, 'TODO_SEND_NOTIFY_MAIL_FUNCTION', None)
+if _send_notify_mail_function is None:
+    send_notify_mail = _send_notify_mail
+else:
+    send_notify_mail = import_from(_send_notify_mail_function)
+
+
+# pai
+def _send_email_to_thread_participants(task, msg_body, user, subject=None):
     """Notify all previous commentors on a Task about a new comment."""
 
     current_site = Site.objects.get_current()
@@ -195,6 +207,13 @@ def send_email_to_thread_participants(task, msg_body, user, subject=None):
     recip_list = list(m for m in recip_list if m)
 
     todo_send_mail(user, task, email_subject, email_body, recip_list)
+
+
+_send_email_to_thread_participants_function = getattr(settings, 'TODO_SEND_EMAIL_TO_THREAD_PARTICIPANTS_FUNCTION', None)
+if _send_email_to_thread_participants_function is None:
+    send_email_to_thread_participants = _send_email_to_thread_participants
+else:
+    send_email_to_thread_participants = import_from(_send_email_to_thread_participants_function)
 
 
 def check_previous_task_lists_completeness(task_list, procedure_uuid=None):
