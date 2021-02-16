@@ -422,7 +422,7 @@ def get_task_list_tasks(task_list, user=None, completed=None):
     return tasks
 
 
-def user_can_toggle_task_done(user, task):
+def todo_user_can_toggle_task_done(user, task):
     if staff_check(user):
         return True
     else:
@@ -433,6 +433,13 @@ def user_can_toggle_task_done(user, task):
                 return False
         else:
             return task.assigned_to == user
+
+
+_user_can_toggle_task_done_function = getattr(settings, 'TODO_USER_CAN_TOGGLE_TASK_DONE_FUNCTION', None)
+if _user_can_toggle_task_done_function is None:
+    user_can_toggle_task_done = todo_user_can_toggle_task_done
+else:
+    user_can_toggle_task_done = import_from(_user_can_toggle_task_done_function)
 
 
 def user_can_view_task_list(user, task_list):
