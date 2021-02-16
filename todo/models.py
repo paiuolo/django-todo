@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 # import datetime  # pai
 import os
 import textwrap
-from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -11,6 +10,7 @@ from django.db import DEFAULT_DB_ALIAS, models
 from django.db.transaction import Atomic, get_connection
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _  # pai
+from django.utils import timezone
 
 from filer.fields.file import FilerFileField  # pai
 
@@ -21,7 +21,7 @@ def now():
     """
     Returns an aware or naive datetime.datetime, depending on settings.USE_TZ.
     """
-    return datetime.now()
+    return timezone.now()
 
 
 def get_attachment_upload_dir(instance, filename):
