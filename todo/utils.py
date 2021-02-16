@@ -11,6 +11,7 @@ from django.utils import timezone  # pai
 from django.db.models import Q  # pai
 from django.db import transaction  # pai
 from django.utils.translation import gettext_lazy as _  # pai
+from django.contrib.auth import get_user_model
 
 from todo.defaults import defaults
 from todo.models import Attachment, Comment, Task
@@ -20,6 +21,7 @@ from filer.models import File as FilerFile, Folder as FilerFolder  # pai
 from .signals import task_completion_toggled
 
 log = logging.getLogger(__name__)
+User = get_user_model()
 
 
 # pai
@@ -368,6 +370,19 @@ def add_attachment_file(request, file_data, task):
     created_attachment.save()
 
 
+def get_task_assignees(task):
+    """
+    Returns task assignees
+    """
+    if task.assigned_to is None:
+        if task.task_list is None:
+            return User.objects.none()
+        else:
+            return task.task_list.group.user_set.all()
+    else:
+        return User.objects.filter(pk=task.assigned_to.pk)
+
+
 def get_user_task_list_tasks(task_list, user, completed=None):
     tasks = task_list.task_set\
         .filter(is_active=True)\
@@ -383,13 +398,13 @@ def get_user_task_list_tasks(task_list, user, completed=None):
 
 
 def get_task_list_tasks(task_list, user=None, completed=None):
-    if user is not None:
+    if user is None:
+        tasks = task_list.task_set.all().prefetch_related('created_by', 'assigned_to')
+    else:
         if staff_check(user):
             tasks = task_list.task_set.all().prefetch_related('created_by', 'assigned_to')
         else:
             tasks = get_user_task_list_tasks(task_list, user)
-    else:
-        tasks = task_list.task_set.all().prefetch_related('created_by', 'assigned_to')
 
     if completed is not None:
         tasks = tasks.filter(completed=completed)
