@@ -71,6 +71,7 @@ def list_detail(request, list_id=None, list_slug=None, view_completed=False) -> 
                 "notify" in request.POST
                 and new_task.assigned_to
                 and new_task.assigned_to != request.user
+                and new_task.assigned_to != new_task.created_by
             ):
                 send_notify_mail(new_task)
 

@@ -10,3 +10,6 @@ __url__ = "https://github.com/shacker/django-todo"
 __license__ = "BSD License"
 
 from . import check
+
+# pai
+default_app_config = 'todo.apps.TodoConfig'

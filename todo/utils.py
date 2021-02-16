@@ -17,6 +17,8 @@ from todo.models import Attachment, Comment, Task
 
 from filer.models import File as FilerFile, Folder as FilerFolder  # pai
 
+from .signals import task_completion_toggled
+
 log = logging.getLogger(__name__)
 
 
@@ -156,7 +158,7 @@ def todo_send_mail(user, task, subject, body, recip_list):
 
 
 # pai
-def _send_notify_mail(new_task):
+def todo_send_notify_mail(new_task):
     """
     Send email to assignee if task is assigned to someone other than submittor.
     Unassigned tasks should not try to notify.
@@ -177,13 +179,13 @@ def _send_notify_mail(new_task):
 
 _send_notify_mail_function = getattr(settings, 'TODO_SEND_NOTIFY_MAIL_FUNCTION', None)
 if _send_notify_mail_function is None:
-    send_notify_mail = _send_notify_mail
+    send_notify_mail = todo_send_notify_mail
 else:
     send_notify_mail = import_from(_send_notify_mail_function)
 
 
 # pai
-def _send_email_to_thread_participants(task, msg_body, user, subject=None):
+def todo_send_email_to_thread_participants(task, msg_body, user, subject=None):
     """Notify all previous commentors on a Task about a new comment."""
 
     current_site = Site.objects.get_current()
@@ -211,7 +213,7 @@ def _send_email_to_thread_participants(task, msg_body, user, subject=None):
 
 _send_email_to_thread_participants_function = getattr(settings, 'TODO_SEND_EMAIL_TO_THREAD_PARTICIPANTS_FUNCTION', None)
 if _send_email_to_thread_participants_function is None:
-    send_email_to_thread_participants = _send_email_to_thread_participants
+    send_email_to_thread_participants = todo_send_email_to_thread_participants
 else:
     send_email_to_thread_participants = import_from(_send_email_to_thread_participants_function)
 
@@ -287,6 +289,9 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
         #     task.completed_by = None
 
         task.save()
+
+        # sending events
+        task_completion_toggled.send(sender=Task, task=task)
 
         return True
 
@@ -380,11 +385,11 @@ def get_user_task_list_tasks(task_list, user, completed=None):
 def get_task_list_tasks(task_list, user=None, completed=None):
     if user is not None:
         if staff_check(user):
-            tasks = task_list.task_set.all()
+            tasks = task_list.task_set.all().prefetch_related('created_by', 'assigned_to')
         else:
             tasks = get_user_task_list_tasks(task_list, user)
     else:
-        tasks = task_list.task_set.all()
+        tasks = task_list.task_set.all().prefetch_related('created_by', 'assigned_to')
 
     if completed is not None:
         tasks = tasks.filter(completed=completed)

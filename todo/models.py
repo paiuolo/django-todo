@@ -10,9 +10,7 @@ from django.contrib.auth.models import Group
 from django.db import DEFAULT_DB_ALIAS, models
 from django.db.transaction import Atomic, get_connection
 from django.urls import reverse
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _  # pai
-from django.db import transaction  # pai
 
 from filer.fields.file import FilerFileField  # pai
 
@@ -23,11 +21,7 @@ def now():
     """
     Returns an aware or naive datetime.datetime, depending on settings.USE_TZ.
     """
-    if settings.USE_TZ:
-        # timeit shows that datetime.now(tz=utc) is 24% slower
-        return timezone.now()
-    else:
-        return datetime.now()
+    return datetime.now()
 
 
 def get_attachment_upload_dir(instance, filename):
