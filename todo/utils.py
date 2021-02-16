@@ -370,7 +370,7 @@ def add_attachment_file(request, file_data, task):
     created_attachment.save()
 
 
-def get_task_assignees(task):
+def todo_get_task_assignees(task):
     """
     Returns task assignees
     """
@@ -381,6 +381,13 @@ def get_task_assignees(task):
             return task.task_list.group.user_set.all()
     else:
         return User.objects.filter(pk=task.assigned_to.pk)
+
+
+_get_task_assignees_function = getattr(settings, 'TODO_GET_TASK_ASSIGNEES_FUNCTION', None)
+if _get_task_assignees_function is None:
+    get_task_assignees = todo_get_task_assignees
+else:
+    get_task_assignees = import_from(_get_task_assignees_function)
 
 
 def get_user_task_list_tasks(task_list, user, completed=None):
