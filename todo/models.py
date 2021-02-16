@@ -218,12 +218,15 @@ class Task(models.Model):
     def get_relative_rest_url(self):
         return reverse("todo_api:task_detail", args=[self.pk])
 
+    # pai
+    """
     # Auto-set the Task creation / completed date
     def save(self, **kwargs):
         # If Task is being marked complete, set the completed_date
         if self.completed:
             self.completed_date = now()
         super(Task, self).save()
+    """
 
     def merge_into(self, merge_target):
         if merge_target.pk == self.pk:

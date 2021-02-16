@@ -284,8 +284,11 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
         task.completed = not task.completed
 
         if task.completed:
+            task.completed_date = timezone.now()
+
             if user is not None:
                 task.completed_by = user
+
         # keep track
         # else:
         #     task.completed_by = None
