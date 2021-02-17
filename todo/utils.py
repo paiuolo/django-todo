@@ -170,7 +170,7 @@ def todo_send_notify_mail(new_task):
         return
 
     current_site = Site.objects.get_current()
-    subject = render_to_string("todo/email/assigned_subject.txt", {"task": new_task})
+    subject = render_to_string("todo/email/assigned_subject.txt", {"task": new_task}).strip()
     body = render_to_string(
         "todo/email/assigned_body.txt", {"task": new_task, "site": current_site}
     )
@@ -193,7 +193,7 @@ def todo_send_email_to_thread_participants(task, msg_body, user, subject=None):
     current_site = Site.objects.get_current()
 
     if not subject:
-        subject = render_to_string("todo/email/assigned_subject.txt", {"task": task})
+        subject = render_to_string("todo/email/assigned_subject.txt", {"task": task}).strip()
 
     email_subject = subject  # pai
 
