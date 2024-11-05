@@ -51,7 +51,7 @@ def external_add(request) -> HttpResponse:
             if task.assigned_to:
                 email_subject = render_to_string(
                     "todo/email/assigned_subject.txt", {"task": task.title}
-                )
+                ).strip()
                 email_body = render_to_string(
                     "todo/email/assigned_body.txt", {"task": task, "site": current_site}
                 )

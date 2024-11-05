@@ -30,8 +30,11 @@ def toggle_done(request, task_id: int) -> HttpResponse:
             return redirect(reverse("todo:task_detail",
                                     args=(task.pk,)))
 
-        _redir_url = reverse("todo:list_detail", kwargs={"list_id": task.task_list.id,
-                                                         "list_slug": task.task_list.slug})
+        if task.procedure_uuid is None:
+            _redir_url = reverse("todo:list_detail", kwargs={"list_id": task.task_list.id,
+                                                             "list_slug": task.task_list.slug})
+        else:
+            _redir_url = reverse('procedures:instance-detail', args=[task.procedure_uuid])
 
         # prevent toggle for specific actions
         if (request.GET.get('done', False) and task.completed) or \
