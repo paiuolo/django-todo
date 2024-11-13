@@ -14,3 +14,4 @@ settings.json
 .mypy_cache
 
 .venv/
+users/

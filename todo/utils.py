@@ -122,11 +122,11 @@ def todo_send_mail(user, task, subject, body, recip_list):
 
     message_id = (
         # the task_id enables attaching back notification answers
-        "<notif-{task_id}."
-        # the message hash / epoch pair enables deduplication
-        "{message_hash:x}."
-        # "{epoch}@django-todo>"
-        + getattr(settings, 'TODO_MAIL_MESSAGE_ID', "{epoch}@django-todo>")  # pai
+            "<notif-{task_id}."
+            # the message hash / epoch pair enables deduplication
+            "{message_hash:x}."
+            # "{epoch}@django-todo>"
+            + getattr(settings, 'TODO_MAIL_MESSAGE_ID', "{epoch}@django-todo>")  # pai
     ).format(
         task_id=task.pk,
         # avoid the -hexstring case (hashes can be negative)
@@ -138,7 +138,8 @@ def todo_send_mail(user, task, subject, body, recip_list):
     # notifications for some task. This message doesn't actually exist,
     # it's just there to make threading possible
     # thread_message_id = "<thread-{}@django-todo>".format(task.pk)
-    thread_message_id = getattr(settings, 'TODO_MAIL_THREAD_MESSAGE_ID', '<thread-{}@django-todo>').format(task.pk)  # pai
+    thread_message_id = getattr(settings, 'TODO_MAIL_THREAD_MESSAGE_ID', '<thread-{}@django-todo>').format(
+        task.pk)  # pai
     references = "{} {}".format(references, thread_message_id)
 
     with backend() as connection:
@@ -226,7 +227,7 @@ def check_previous_task_lists_completeness(task_list, procedure_uuid=None):
     """
     if task_list is not None and task_list.previous_task_list is not None:
         return task_list.previous_task_list.all_tasks_completed(procedure_uuid) and \
-               check_previous_task_lists_completeness(task_list.previous_task_list, procedure_uuid=procedure_uuid)
+            check_previous_task_lists_completeness(task_list.previous_task_list, procedure_uuid=procedure_uuid)
     else:
         return True
 
@@ -307,18 +308,29 @@ def toggle_task_completed(task_id: int, user=None) -> bool:
 
 
 def remove_attachment_file(attachment_id: int) -> bool:
-    """Delete an Attachment object and its corresponding file from the filesystem."""
+    """Delete an Attachment object and its corresponding files (file and filer_file) from the filesystem."""
     try:
         attachment = Attachment.objects.get(id=attachment_id)
-        if attachment.file:
-            if os.path.isfile(attachment.file.path):
-                os.remove(attachment.file.path)
 
+        # Remove the regular file if it exists
+        if attachment.file and os.path.isfile(attachment.file.path):
+            os.remove(attachment.file.path)
+
+        # Remove the filer_file if it exists
+        if attachment.filer_file and attachment.filer_file.file:
+            if os.path.isfile(attachment.filer_file.file.path):
+                os.remove(attachment.filer_file.file.path)
+            attachment.filer_file.delete()  # Deletes the filer file from the database
+
+        # Delete the Attachment instance
         attachment.delete()
         return True
 
     except Attachment.DoesNotExist:
         log.info(f"Attachment {attachment_id} not found.")
+        return False
+    except Exception as e:
+        log.error(f"Error deleting attachment {attachment_id}: {e}")
         return False
 
 
@@ -330,7 +342,7 @@ def add_attachment_file(request, file_data, task):
 
     name, extension = os.path.splitext(file_data.name)
 
-    if extension not in defaults("TODO_LIMIT_FILE_ATTACHMENTS"):
+    if extension.lower() not in defaults("TODO_LIMIT_FILE_ATTACHMENTS"):
         raise Exception(_("This site does not allow upload of '{}' files.").format(extension))
 
     user = request.user  # !!
@@ -394,8 +406,8 @@ else:
 
 
 def get_user_task_list_tasks(task_list, user, completed=None):
-    tasks = task_list.task_set\
-        .filter(is_active=True)\
+    tasks = task_list.task_set \
+        .filter(is_active=True) \
         .filter(Q(created_by=user) |
                 Q(assigned_to=user) |
                 Q(assigned_to__isnull=True, task_list__group__in=get_user_groups(user))) \
@@ -455,4 +467,19 @@ def user_can_delete_task(user, task):
     else:
         # task has no procedure and has been created by user
         return task.procedure_uuid is None and \
-               task.created_by == user
+            task.created_by == user
+
+
+def _user_can_download_attachment(attachment, user):
+    # Verifica se l'utente è il creatore dell'allegato o l'assegnatario o staff
+    if attachment.added_by == user or staff_check(
+            user) or attachment.task.assigned_to == user or attachment.task.created_by == user or user.is_superuser:
+        return True
+    return False
+
+
+_get_user_can_download_attachment_function = getattr(settings, 'TODO_USER_CAN_DOWNLOAD_ATTACHMENT_FUNCTION', None)
+if _get_user_can_download_attachment_function is None:
+    user_can_download_attachment = _user_can_download_attachment
+else:
+    user_can_download_attachment = import_from(_get_user_can_download_attachment_function)

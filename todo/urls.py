@@ -27,6 +27,9 @@ urlpatterns = [
     path(
         "attachment/remove/<int:attachment_id>/", views.remove_attachment, name="remove_attachment"
     ),
+    path(
+        "attachment/download/<int:attachment_id>/", views.download_attachment, name="download_attachment"
+    ),  # pai
 ]
 
 if HAS_TASK_MERGE:

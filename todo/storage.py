@@ -9,7 +9,7 @@ from filer.storage import PrivateFileSystemStorage as FilerPrivateFileSystemStor
 class PrivateFileSystemStorage(FilerPrivateFileSystemStorage):
     @cached_property
     def base_location(self):
-        return self._value_or_setting(self._location, settings.PRIVATE_ROOT)
+        return self._value_or_setting(self._location, getattr(settings, 'PRIVATE_ROOT', settings.MEDIA_ROOT))
 
     @cached_property
     def location(self):

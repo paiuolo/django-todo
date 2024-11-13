@@ -30,18 +30,21 @@ def handle_add_comment(request, task):
     if not request.POST.get("add_comment"):
         return
 
-    Comment.objects.create(
-        author=request.user, task=task, body=bleach.clean(request.POST["comment-body"], strip=True)
+    comment_body = bleach.clean(request.POST["comment-body"], strip=True)
+
+    _comment, created = Comment.objects.get_or_create(
+        author=request.user, task=task, body=comment_body
     )
 
-    send_email_to_thread_participants(
-        task,
-        request.POST["comment-body"],
-        request.user,
-        subject='New comment posted on task "{}"'.format(task.title),
-    )
+    if created:
+        send_email_to_thread_participants(
+            task,
+            request.POST["comment-body"],
+            request.user,
+            subject='New comment posted on task "{}"'.format(task.title),
+        )
 
-    messages.success(request, _("Comment posted. Notification email sent to thread participants."))
+        messages.success(request, _("Comment posted. Notification email sent to thread participants."))
 
 
 @login_required

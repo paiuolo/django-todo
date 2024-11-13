@@ -4,8 +4,11 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
 
-from todo.models import Task, TaskList
+from filer.models import File as FilerFile
+
+from todo.models import Task, TaskList, Attachment
 
 """
 First the "smoketests" - do they respond at all for a logged in admin user?
@@ -357,3 +360,41 @@ def test_setting_TODO_STAFF_ONLY_True(todo_setup, client, settings, django_user_
     # pai
     # assert response.status_code == 302  # Redirected to login view
     assert response.status_code == 200  # task list is always visible
+
+
+@pytest.mark.django_db
+def test_download_attachment_permission(todo_setup, client):
+    # Imposta un utente e un task con un allegato associato
+    user_with_permission = get_user_model().objects.get(username="u1")
+    user_without_permission = get_user_model().objects.get(username="ux")
+    task = Task.objects.filter(created_by=user_with_permission).first()
+
+    # Crea un file fittizio
+    fake_file = SimpleUploadedFile("test_file.txt",
+                                   b"This is a test file content.",
+                                   content_type="text/plain")
+    # Crea un oggetto FilerFile con il file fittizio
+    filer_file = FilerFile.objects.create(
+        original_filename="test_file.txt",
+        file=fake_file,
+        owner=user_with_permission
+    )
+
+    # Crea un allegato per il task
+    attachment = Attachment.objects.create(
+        task=task,
+        added_by=user_with_permission,
+        file=fake_file,  # Aggiunge il file fittizio al campo `file`
+        filer_file=filer_file  # Imposta il campo `filer_file`
+    )
+
+    # Testa se l'utente con permesso può scaricare l'allegato
+    client.login(username="u1", password="password")
+    url = reverse("todo:download_attachment", kwargs={"attachment_id": attachment.id})
+    response = client.get(url)
+    assert response.status_code == 200  # Utente con permesso può accedere
+
+    # Testa se un utente senza permesso riceve un 403
+    client.login(username="ux", password="password")
+    response = client.get(url)
+    assert response.status_code == 403  # Utente senza permesso ottiene accesso negato
